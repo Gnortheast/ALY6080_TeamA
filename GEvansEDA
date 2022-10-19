@@ -1,0 +1,541 @@
+---
+title: "Module 3 EDA Sponsor Dataset "
+Authors: "Gabriella Evans"
+output: html_document
+date: '2022-10-09'
+---
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# TODO change path to your working directory
+WORKINGDIR <- "C:/Users/Gabriella/Desktop/ALY6080/SponsorDatasets"
+
+# R-markdown/Knitr alternative to setwd()
+# MUST be run in this first chunk called "setup"
+knitr::opts_knit$set(root.dir = WORKINGDIR) # sets working dir when Knitting
+
+# TODO if coding live as you build this document copy & paste the setwd() command into your console.
+setwd(WORKINGDIR) # sets working dir for R studio instance IF copied directly into console
+
+# suppress scientific notation
+options(scipen = 99)
+
+# suppress loading strings as factors
+options(stringsAsFactors = FALSE)
+
+rm(list=ls()) 
+
+#clear environment
+#m(list=ls()) 
+```
+
+## Purpose
+
+Overview and Rationale
+
+Dig deeper into the data (EDA) you were provided. Complete work on preparing data for exploratory analysis. 
+This might include cleaning data, integrating data, refreshing data, filling gaps in data, leveling variables, and assigning formats.  
+
+In addition, pay special exploratory attention to the area you agreed to do for the team in our in-class discussion.
+
+Look at income and 
+
+Instructions
+Report on the work you have done to prepare the data and any key findings from your general EDA as well as your assigned area.  
+Address the following questions:
+
+How are you addressing data preparation?
+What tasks did you complete?
+What tasks are left to be done?
+What key findings did you unearth in your EDA?
+What might be a good method to communication those findings (type of visualization)? 
+[You can accomplish this by creating the visualization itself.]
+
+
+Submit
+
+APA 7 Professional Format (Sample), 
+(Include a Title Page, Abstract, Running Head, Headings, References Page, Cited References, etc.)
+12-pt, Times New Roman, and Double-Spaced (no paragraph breaks)
+
+2-Page Maximum (excludes title, abstract, and references pages)
+Submission File Type: Word or PDF
+
+
+
+### Load Libaries
+```{r libraries}
+# TODO uncomment those you use in your subsequent code
+library(dplyr)
+#library("magrittr")
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(corrplot)
+#library(magrittr)  
+#library(ISLR)
+library(corrplot)
+#library(caret)
+#library(gridExtra)
+#library(pROC)
+#library(leaps)
+#library(glmnet)
+#library(Metrics)
+#library(CRAN)
+#install.packages("readxl")
+library(readxl)
+
+#install.packages("pacman")
+#library(pacman)
+#p_load(psych)
+#p_load(Hmisc)
+#p_load(mice)
+#p_load(VIM)
+
+```
+
+
+#Read in Dataset
+
+```{r}
+
+Diary1<-read_excel("Diary1.xlsx")
+Diary2<-read_excel("Diary2.xlsx")
+
+Demo1<-read_excel("Demo1.xlsx")
+Demo2<-read_excel("Demo2.xlsx")
+
+
+```
+
+
+## Analysis
+#Summary of data and data cleaning
+
+missing values in rows
+```{r}
+nrow(Diary1) - sum(complete.cases(Diary1))
+nrow(Diary1) - sum(complete.cases(Demo1))
+
+nrow(Diary1) - sum(complete.cases(Diary2))
+nrow(Diary1) - sum(complete.cases(Demo2))
+
+
+```
+
+
+
+Count NA values by variable
+View distinct values and check for duplicates
+ 
+```{r}
+# Do we need to worry about missing values?
+num_missing_values = sum(is.na(Diary1))
+cat( "\nnum. missing values = ", num_missing_values, "\n\n", sep = "" )
+
+
+num_missing_values = sum(is.na(Demo1))
+cat( "\nnum. missing values = ", num_missing_values, "\n\n", sep = "" )
+
+num_missing_values = sum(is.na(Diary2))
+cat( "\nnum. missing values = ", num_missing_values, "\n\n", sep = "" )
+
+
+num_missing_values = sum(is.na(Demo2))
+cat( "\nnum. missing values = ", num_missing_values, "\n\n", sep = "" )
+
+
+```
+
+
+
+#What percentage of data is missing
+
+
+
+```{r}
+
+# Can we just drop missing rows?
+num_rows = nrow(Diary1)
+row_has_missing_value = vector( mode = "logical", length = num_rows )
+for( i in 1 : num_rows ) {
+  row_has_missing_value[ i ] = any( is.na(Diary1[ i, ] ) )
+}
+num_rows_with_missing_value = sum( row_has_missing_value )
+cat( "\nnum. rows = ", num_rows, "\nnum. rows with missing value = ", num_rows_with_missing_value, "\n\n", sep = "" )
+# This is the entire dataset
+
+# Is is just one attribute that is commonly missing?
+column_names = colnames(Diary1)
+na_counts = vector( mode = "numeric", length = length( column_names ) )
+for( i in 1 : num_rows ) {
+  missing_value_column_indices = which( is.na(Diary1[ i, ] ) )
+  na_counts[ missing_value_column_indices ] = na_counts[ missing_value_column_indices ] + 1
+}
+count_matrix = cbind( column_names, na_counts )
+colnames( count_matrix ) = c("Column Name", "NA Count" )
+print( count_matrix )
+
+# Is is just one attribute that is commonly missing?
+column_names = colnames(Diary2)
+na_counts = vector( mode = "numeric", length = length( column_names ) )
+for( i in 1 : num_rows ) {
+  missing_value_column_indices = which( is.na(Diary1[ i, ] ) )
+  na_counts[ missing_value_column_indices ] = na_counts[ missing_value_column_indices ] + 1
+}
+count_matrix = cbind( column_names, na_counts )
+colnames( count_matrix ) = c("Column Name", "NA Count" )
+print( count_matrix )
+
+
+#all except 9 columns contain significant number of missing values. Columns with
+#no missing values are : respondent ID, start date and end date 
+
+#"Please select today’s date from the below calendar.  
+#(Or, if you haven’t entered your answers yet for an earlier day since this diary started, please pick that date)"(not really helpful)
+
+
+#Month, Day, Year, Day name, have you/your household done any laundry loads today (washer only, dryer only, hand wash only? select one)
+
+
+unique(Diary1$`2. Have you / your household done any laundry loads today (washer only, dryer only, hand wash only etc.)? (Select one)`)
+#good to see we only have 2 responses no and yes to this question. Let's look at frequency table of this variable by the day name
+
+```
+
+
+
+```{r}
+#convert column to factor 
+Diary1$`2. Have you / your household done any laundry loads today (washer only, dryer only, hand wash only etc.)? (Select one)` = as.factor(Diary1$`2. Have you / your household done any laundry loads today (washer only, dryer only, hand wash only etc.)? (Select one)`)
+
+
+
+table(Diary1$`2. Have you / your household done any laundry loads today (washer only, dryer only, hand wash only etc.)? (Select one)`)
+
+
+
+```
+
+```{r}
+summary(Diary1)
+str(Diary1)  #confirm 209,492 observations
+head(Diary1)
+```
+
+If a respondent answered no to the question: Have you or your household done any laundry loads today?
+then this is the reason for missing values in the row for other columns. About half of the respondents
+did laundry in Diary 1 and half did not 
+
+Probably want to create subsets of the data frames based on having yes response to doing laundry, can also look at the no's and see what
+days are most frequently no laundry days
+
+then let's look at frequency table of yes/no to laundry question by the day name. Also rename the column
+
+
+
+```{r}
+# Examine Outliers
+
+#Subset for only yes laundry days Diary 1
+
+Diary1sub = Diary1[Diary1$`2. Have you / your household done any laundry loads today (washer only, dryer only, hand wash only etc.)? (Select one)` %in% c("Yes"),]
+
+
+table(Diary1sub$`1a. Day name`) #Most people that did laundry did so on a Sunday
+
+
+
+#make ggplot table for number of laundry occurrences by day name
+laundrydays1 <- Diary1sub %>%
+  group_by(`1a. Day name`) %>%
+  dplyr::summarise(n=n())
+print(laundrydays1)
+
+#rename day name and laundry count
+names(laundrydays1)[1]<- "Dayname"
+names(laundrydays1)[2] = "LaundryCount"
+
+
+#re order days of the week
+# Replicate original data
+laundrydays1$Dayname <- factor(laundrydays1$Dayname,                                    # Change ordering manually
+                  levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+
+#create bar plot of count of laundry by days of the week
+ggplot(laundrydays1, aes(Dayname, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Day of Week', y='Laundry Count', title='Laundry Occurrences by Day of Week - Diary 1')
+
+```
+
+
+
+
+
+```{r}
+Diary2sub = Diary2[Diary2$`2. Have you / your household done any laundry loads today (washer only, dryer only, hand wash only etc.)? (Select one)` %in% c("Yes"),]
+
+#table(Diary2sub$`1a. Day name`) 
+
+#there are 2 occurrences with incorrect day name, this should be fixed they both occurred on a Monday
+Diary2sub$`1a. Day name`[Diary2sub$`1a. Day name` == "44655"] <- "Monday"
+
+
+laundrydays2 <- Diary2sub %>%
+  group_by(`1a. Day name`) %>%
+  dplyr::summarise(n=n())
+print(laundrydays2)
+
+
+#rename day name and laundry count
+names(laundrydays2)[1]<- "Dayname"
+names(laundrydays2)[2] = "LaundryCount"
+
+
+
+#re order days of the week
+# Replicate original data
+laundrydays2$Dayname <- factor(laundrydays2$Dayname,                                    # Change ordering manually
+                  levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+
+#create bar plot of count of laundry by days of the week
+ggplot(laundrydays2, aes(Dayname, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Day of Week', y='Laundry Count', title='Laundry Occurrences by Day of Week - Diary 2')
+
+
+
+
+
+
+
+
+```
+
+
+
+Once you subset these, join demo1 to diary1 subset 
+and demo2 to diary2 subset info to match demographic info to the respondents
+
+We can then summarize information at daily level to get to weekly and monthly
+Also want to look at income, level of education, and 
+
+
+Examine if we can union it all at some point for 6 months of data
+
+```{r}
+UnionLaundrydays1 <- merge(Demo1, Diary1sub, by='Respondent ID', all=TRUE)
+
+#view result
+#str(UnionLaundrydays1)
+
+
+#rename laundry date variable
+UnionLaundrydays1$Laundry_Date = UnionLaundrydays1$`Please select today’s date from the below calendar.  (Or, if you haven’t entered your answers yet for an earlier day since this diary started, please pick that date)`
+
+#rename income variable (will need to factor)
+UnionLaundrydays1$Income = UnionLaundrydays1$`HH Income. HH Income`
+
+#rename female education
+UnionLaundrydays1$FEducation = UnionLaundrydays1$`Education of Female HOH. Education of Female HOH`
+
+#rename male education
+UnionLaundrydays1$MEducation = UnionLaundrydays1$`Education of Male HOH. Education of Male HOH`
+
+
+#rename Ethnicity
+UnionLaundrydays1$Ethnicity = UnionLaundrydays1$`Ethnicity of HOH. Ethnicity of HOH`
+
+
+#summarize the number of laundry occurrences by date and percapita 
+UnionLaundrydays1_sub <- UnionLaundrydays1 %>%
+  group_by(`Respondent ID`, Laundry_Date, `PerCapita. Per Capita`) %>%
+  dplyr::summarise(n=n())
+print(UnionLaundrydays1_sub)
+
+
+#rename day name and laundry count
+names(UnionLaundrydays1_sub )[1]<- "RespondentID"
+names(UnionLaundrydays1_sub )[3]<- "PerCapita"
+names(UnionLaundrydays1_sub )[4] = "LaundryCount"
+#print(UnionLaundrydays1_sub)
+
+
+
+#summarize the number of laundry occurrences by ethnicity, income, and education
+UnionLaundrydays1_sub2 <- UnionLaundrydays1 %>%
+  group_by(`Respondent ID`, Ethnicity, Income, `PerCapita. Per Capita`, FEducation, MEducation) %>%
+  dplyr::summarise(LaundryCount=n())
+print(UnionLaundrydays1_sub2)
+
+
+
+
+ggplot(UnionLaundrydays1_sub, aes(fill=PerCapita, x = Laundry_Date, y = LaundryCount)) +
+  geom_bar(color='black',stat = "identity")+
+  labs(x='Laundry Date', y='Laundry Count', title='Laundry Occurrences by Income Level & Date - Diary 1')
+
+ggplot(UnionLaundrydays1_sub, aes(x = Laundry_Date, y = LaundryCount)) +
+  geom_bar(color='black',stat = "identity")+
+  labs(x='Laundry Date', y='Laundry Count', title='Laundry Occurrences by Income & Date - Diary 1')
+
+table(UnionLaundrydays1$PerCapita) #Total freq, most people that did laundry were middle income, followed by upper income, and then lower income 
+
+
+#create bar plot of count of laundry by ethnicity
+ggplot(UnionLaundrydays1_sub2, aes(Ethnicity, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Ethnicity', y='Laundry Count', title='Laundry Occurrences by Ethnicity - Diary 1')
+
+#only 2 ethnicities represented
+
+
+ggplot(UnionLaundrydays1_sub2, aes(Income, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Income', y='Laundry Count', title='Laundry Occurrences by Income Range - Diary 1')
+
+#most laundry is being done by upper income individuals 100k or higher for first 3 months
+
+#plot laundry occurrences by female HOH education level
+ggplot(UnionLaundrydays1_sub2, aes(FEducation, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Female Education Level', y='Laundry Count', title='Laundry Occurrences by Female HOH Education Level - Diary 1')
+
+
+
+
+#plot laundry occurrences by Male HOH education level
+ggplot(UnionLaundrydays1_sub2, aes(MEducation, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Male Education Level', y='Laundry Count', title='Laundry Occurrences by Male HOH Education Level - Diary 1')
+
+
+#unique(UnionLaundrydays1_sub2$Income)
+
+```
+
+Spikes of laundry occurrences in January and appears to be done by majority 
+middle income individuals
+
+
+
+noticed that there are cases where a person did laundry more than once 
+on the same day
+
+
+The same is done for laundry days diary 2 below
+
+
+```{r}
+
+UnionLaundrydays2 <- merge(Demo2, Diary2sub, by='Respondent ID', all=TRUE)
+
+
+#rename laundry date variable
+UnionLaundrydays2$Laundry_Date = UnionLaundrydays2$`Please select today’s date from the below calendar.  (Or, if you haven’t entered your answers yet for an earlier day since this diary started, please pick that date)`
+
+
+#rename income variable (will need to factor)
+UnionLaundrydays2$Income = UnionLaundrydays2$`HH Income. HH Income`
+
+#rename female education
+UnionLaundrydays2$FEducation = UnionLaundrydays2$`Education of Female HOH. Education of Female HOH`
+
+#rename male education
+UnionLaundrydays2$MEducation = UnionLaundrydays2$`Education of Male HOH. Education of Male HOH`
+
+
+#rename male education
+UnionLaundrydays2$MEducation = UnionLaundrydays2$`Education of Male HOH. Education of Male HOH`
+
+
+#rename Ethnicity
+UnionLaundrydays2$Ethnicity = UnionLaundrydays2$`Ethnicity of HOH. Ethnicity of HOH`
+
+
+
+#summarize the number of laundry occurrences by date
+UnionLaundrydays2_sub <- UnionLaundrydays2 %>%
+  group_by(`Respondent ID`, Laundry_Date, `PerCapita. Per Capita`) %>%
+  dplyr::summarise(n=n())
+print(UnionLaundrydays2_sub)
+
+
+
+#summarize the number of laundry occurrences by ethnicity, income, and education
+UnionLaundrydays2_sub2 <- UnionLaundrydays2 %>%
+  group_by(`Respondent ID`, Ethnicity, Income, FEducation, MEducation) %>%
+  dplyr::summarise(LaundryCount=n())
+print(UnionLaundrydays2_sub2)
+
+
+#rename day name and laundry count
+names(UnionLaundrydays2_sub)[1]<- "RespondentID"
+names(UnionLaundrydays2_sub)[3]<- "PerCapita"
+names(UnionLaundrydays2_sub)[4] = "LaundryCount"
+#print(UnionLaundrydays1_sub)
+
+
+ggplot(UnionLaundrydays2_sub, aes(fill=PerCapita, x = Laundry_Date, y = LaundryCount)) +
+  geom_bar(stat = "identity")+
+  labs(x='Laundry Date', y='Laundry Count', title='Laundry Occurrences by Income Level & Date - Diary 2')
+
+
+table(UnionLaundrydays2$PerCapita) #Total freq, most people that did laundry were now Upper income, followed by middle income, and then lower income 
+
+#create bar plot of count of laundry by ethnicity
+ggplot(UnionLaundrydays2_sub2, aes(Ethnicity, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Ethnicity', y='Laundry Count', title='Laundry Occurrences by Ethnicity - Diary 2')
+
+#only 2 ethnicities represented
+
+
+ggplot(UnionLaundrydays2_sub2, aes(Income, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Income', y='Laundry Count', title='Laundry Occurrences by Income Range - Diary 2')
+
+#most laundry is being done by upper income individuals 100k or higher for first 3 months
+
+#plot laundry occurrences by female HOH education level
+ggplot(UnionLaundrydays2_sub2, aes(FEducation, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Female Education Level', y='Laundry Count', title='Laundry Occurrences by Female HOH Education Level - Diary 2')
+
+
+
+
+#plot laundry occurrences by Male HOH education level
+ggplot(UnionLaundrydays2_sub2, aes(MEducation, LaundryCount)) +                                    # Manually ordered barchart
+  geom_bar(stat = "identity")+
+  labs(x='Male Education Level', y='Laundry Count', title='Laundry Occurrences by Male HOH Education Level - Diary 2')
+
+
+
+
+```
+
+
+For both time periods lower income individuals did laundry less frequently
+
+breakdown - please indicate the time of day at which you did/are doing laundry
+education level
+
+Count the number of na's in each subset for when laundry was done
+(is this only 79 occurrences?)
+
+```{r}
+#want to include other variables with counts by day like brand used? 
+
+
+
+
+
+```
