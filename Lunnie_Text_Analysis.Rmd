@@ -1,0 +1,125 @@
+---
+title: "Lunnie_TExt_Analysis"
+author: "Douglas Lunnie"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(tidyverse)
+library(stringr)
+
+```
+
+```{r}
+text <- read.csv("../data/text.csv") #Load in the data
+
+```
+
+```{r}
+#Breakup data into manageable chunks, 8592 entries, containes many diplicates due to previous join. Should fix in upstream file generation
+
+
+frustrations <- as.vector(unique(text$Frustrations)) #Get unique entries from frustrations list, 3216 items long
+tips <- as.vector(unique(text$Tips_Tricks)) #unique entries from the tips list, 1770 items long
+
+households <- length(unique(text$Res_ID))  #4693 Households reporting
+
+
+```
+
+
+
+```{r}
+
+length(which(str_count(text$Frustrations, "fold.") > 0)) #Number of complaints including the word "Fold"
+
+```
+
+```{r}
+
+length(which(str_count(text$Frustrations, "stain.") > 0))
+
+```
+
+```{r}
+#Setup a regular expression to detect sentence that mention family members, sharing, or other people
+family <- c("husband", "son", "wife", "daughter", "mother", "father", "sister", "brother", "spouse", "sibling", "kid", "kids", "shar.", "people")
+family_match <- str_c(family, collapse = "|")
+
+people_frustrations <- str_subset(frustrations, family_match) 
+
+people_frustrations
+```
+
+
+```{r}
+#Setup a regular expression to detect sentence that mention details specific to the tasks of doing laundry
+tasks <- c("pockets", "residue", "time", "long", "bend.", "shrink", "wrinkle", "lint", "chore", "sort", "hang", "rewash", "broken", "static")
+tasks_match <- str_c(tasks, collapse = "|")
+
+task_frustration <- str_subset(frustrations, tasks_match) 
+
+length(task_frustration) #783 Complaints
+
+
+```
+
+
+```{r}
+#Setup a regular expression to detect sentence that mention details specific to the laudnry soils
+soils <- c("dirty", "smell", "dingy", "oil", "grease", "dirt", "blood", "grass")
+soils_match <- str_c(soils, collapse = "|")
+
+soils_frustration <- str_subset(frustrations, soils_match) 
+
+soils_frustration # 157 Complaints
+```
+
+
+```{r}
+#How many events are no, nope or none?
+nones <- c("none", "^no complaints$", "^no$", "nothing")
+nones_match <- str_c(nones, collapse = "|")
+
+nones_frustration <- str_subset(frustrations, nones_match) 
+
+nones_frustration # 36 No Comments
+
+
+```
+
+```{r}
+#Who likes doing laundry?
+likes <- c("love", "enjoy", "^fun$") #the string "like" is too ambiguous to use siomple here
+likes_match <- str_c(likes, collapse = "|")
+
+likes_frustration <- str_subset(frustrations, likes_match) 
+
+likes_frustration # 44 Likes 
+
+
+```
+
+
+```{r}
+#Economic considerations
+
+cost <- c("cost", "price", "expensive", "money") 
+cost_match <- str_c(cost, collapse = "|")
+
+cost_frustration <- str_subset(frustrations, cost_match) 
+
+cost_frustration # 17 Complaints 
+
+
+
+```
+
+

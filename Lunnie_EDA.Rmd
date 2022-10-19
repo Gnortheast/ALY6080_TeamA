@@ -1,0 +1,152 @@
+---
+title: "Lunnie_EDA"
+author: "Douglas Lunnie"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+```
+
+
+
+```{r}
+#Load in combined datasets
+demo <- read.csv("../Data/demographics.csv") #demographic set
+diary <- read.csv("../Data/diary.csv") #diary set
+
+```
+
+
+```{r}
+
+#If laundry occurs on a given day, how many loads are completed?
+events <- diary %>% #Save results to new object
+    group_by(Res_ID) %>% 
+  filter(Event_Count > 0) %>% #Select Days where Laundry Occurs
+  summarize(Event_Count)
+```
+```{r}
+
+#Evaluate the count distribution of laundry events on days that laundry has occurred
+mean(events$Event_Count) #1.82 Mean laundry events per day
+median(events$Event_Count) #
+max(events$Event_Count) #Max event count is 9
+
+lpd <- ggplot(events, mapping = aes(x = Event_Count)) +
+  geom_histogram(binwidth = .5) +
+  scale_x_continuous("Loads", breaks = 1:10, labels = c(1:10), limits = c(0,10)) + 
+  labs( title = "Loads per Day", subtitle = "Load count for days when laundry is performed") +
+  theme_minimal()
+
+ggsave("lpd.jpg", plot = last_plot(), device = "jpeg")
+```
+```{r}
+#Count events per household per week
+household_events <- events %>%
+  group_by(Res_ID) %>%
+  summarize(total = n())
+```
+
+```{r}
+mean(household_events$total)
+median(household_events$total)
+max(household_events$total)
+min(household_events$total)
+
+ggplot(household_events, mapping = aes(x = total)) +
+  geom_histogram(binwidth = .5) +
+  scale_x_continuous("Loads", breaks = seq(2,44, 2), labels = seq(2,44, 2), limits = c(0,44)) + 
+  labs( title = "Loads per Household", subtitle = "Loads per week for homes that perform laundry. Max = 44, mean = 4.2") +
+  theme_minimal()
+
+ggsave("lph.jpg", plot = last_plot(), device = "jpeg")
+```
+
+
+
+
+```{r}
+#How many of the households are doing laundry?
+n_distinct(household_events) #2576 distinct households in the laundry events set. 
+
+n_distinct(demo$Respondent.ID) #4803 distinct households in the demographics set.
+
+n_distinct(household_events)/n_distinct(demo$Respondent.ID) # 53% of respondents are doing laundry at all. This is an interesting finding. 
+
+```
+
+
+```{r}
+#I want to validate this 53% finding somehow. 
+n_distinct(diary$Res_ID) #4803 distinct respondents in the diary set
+n_distinct(demo$Respondent.ID) #4803 distinct households in the demographics set.
+
+n_distinct(diary$Res_ID)/n_distinct(demo$Respondent.ID) #100% of households accounted for 
+```
+```{r}
+#Abandond for now - Evaluate diary data where events do not occur
+
+# Summarize Households where laundry did not occur
+ 
+#Select Respondents IDs from household events list (laundry events greater than zero)
+#users <- household_events[['Res_ID']]
+
+#Filter out "laundry performers" from diary dataframe
+#non_users <- diary %>% filter(Res_ID != users)
+
+#diary %>% which(Res_ID != users)
+
+#Select unique households from filtered sets
+```
+
+```{r}
+
+#Select diary events where no laundry has occurred
+no_events <- diary %>% filter(Laundry_Event_Today. == "No")
+  table(no_events$Tips_Tricks, ) #no events contains 
+
+```
+
+
+```{r}
+# Prepare dataset for text analysis
+#Subset Frustrations Data
+frustrations <- diary %>% #Subset the frustrations Entry
+  select('Res_ID', 'Frustrations')
+ 
+#Filter empties
+frustrations <- filter(frustrations, Frustrations != "") # Filter out empty values
+
+#Subset Tips data
+tips <- diary %>% #Subset the frustrations Entry
+  select('Res_ID', 'Tips_Tricks')
+
+#Filter out empties and save into Tips
+tips <- filter(tips, Tips_Tricks != "")
+```
+
+
+```{r}
+#Join the filtered data and save to a new object
+
+text <- frustrations %>% 
+  select_all() %>%
+  full_join(tips, by = "Res_ID")
+
+write.csv(text, "../data\\text.csv", row.names = FALSE)
+```
+
+
+```{r}
+```
+
+
+
+
