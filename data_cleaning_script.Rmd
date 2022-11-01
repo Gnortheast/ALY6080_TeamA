@@ -1,0 +1,105 @@
+---
+title: "Cleaning Script"
+author: "Douglas Lunnie"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE}
+#Install/Load Packages
+install.packages("tidyverse")
+library(tidyverse)
+library(tibble)
+```
+
+```{r}
+#Load data into environment. 
+#Requires renaming raw files to the indicated "Demo_x" listed below. Files must be read from the same directory as this code. 
+#Ensure Raw .csv files should be encoded as UTF-8, this can be done via opening the .csv in Notepad>Save As> ... Select UTF-8 encoding and overwrite file.
+#Some systems automatically reformat .csv files when opened in Excel. 
+
+#Programming note - Opportunity to have the script reformat the code on read-in. 
+
+Demo1 <- read.csv("Demo_1.csv") #read in first demographic set
+Demo2 <- read.csv("Demo_2.csv") #2nd demographic set
+Diary1 <-read.csv("Diary_1.csv")#1st Diary Set
+Diary2 <-read.csv("Diary_2.csv")#2nd Diary Set
+Diary1 <- tibble(Diary1)
+Diary2 <- tibble(Diary2)
+```
+
+```{r, include=FALSE}
+demo <- rbind(Demo1, Demo2) #Combine both demographic datasets into one dataframe
+```
+
+```{r, include=FALSE}
+#rename to common item using 2nd more descriptive name -
+# Note the colnames(df)[NN] syntax here was confusing. Rename by index.
+colnames(Diary1)[43] <-  colnames(Diary2)[43]
+#Test that they are now the same
+colnames(Diary1[43]) == colnames(Diary2[43])
+```
+
+```{r, include=FALSE}
+#rename to common item using 2nd more descriptive name -
+# Note the colnames(df)[NN] syntax here was confusing. Rename by index.
+colnames(Diary1)[44] <-  colnames(Diary2)[44]
+#Test that they are now the same
+colnames(Diary1[44]) == colnames(Diary2[44])
+```
+```{r}
+#Next column set is d2.50 (diary 2, column 50) + d2.51. 
+#These questions were added and column names for these should be inserted in the same place for d1.50 and d1.51. 
+colnames(Diary2[50])
+Diary1 <- add_column(Diary1, 'NA', .after = 49) #Cannot directly add variable driven by indexing Diary2[50], the names adds a "/" at each end of the string. Adding a placeholder
+colnames(Diary1)[50] <-  colnames(Diary2)[50] #renaming via indexing. OVerwrite the placeholder name
+#Check the names are the same
+colnames(Diary1[50]) ==  colnames(Diary2[50])
+```
+
+
+```{r}
+colnames(Diary2[51])
+Diary1 <- add_column(Diary1, 'NA', .after = 50) #Cannot directly add variable driven by indexing Diary2[50], the names adds a "/" at each end of the string. Adding a placeholder
+colnames(Diary1)[51] <-  colnames(Diary2)[51] #renaming via indexing. OVerwrite the placeholder name
+#Check the names are the same
+colnames(Diary1[51]) ==  colnames(Diary2[51])
+```
+
+```{r, include=FALSE}
+#Add four new columns at the end
+lastnames <- c(colnames(Diary2[222:225]))
+#Diary1 <- add_column(Diary1, lastnames)
+for (i in 1:length(lastnames)){ #set loop length
+  n = 221 + i       #Set Starting Index
+  print (n)   #Print Iterate
+  Diary1 <- add_column(Diary1, "NA") # Add new column
+  colnames(Diary1)[n] <-  colnames(Diary2)[n] #rename Column
+  }
+# Check to confirm all names are identical
+colnames(Diary2[222:225]) == colnames(Diary1[222:225])
+```
+
+```{r}
+#Combine diaries together now that columns agree
+diary <- rbind(Diary1, Diary2)
+```
+
+```{r}
+#Rename Diary Files According to new  name set
+names <- read.csv("diary_names.csv")
+colnames(diary) <-  colnames(names)
+colnames(diary)
+```
+
+
+#Intermediate Cleaning Steps
+
+
+
+
+
