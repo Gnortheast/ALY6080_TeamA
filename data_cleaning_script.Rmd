@@ -97,9 +97,21 @@ colnames(diary)
 ```
 
 
+```{r, include=FALSE}
+#Rename Demo Files According to new  name set
+demo_names <- read.csv("demo_names.csv")
+colnames(demo) <-  colnames(demo_names)
+colnames(demo)
+```
+
+
 #Intermediate Cleaning Steps
 
-
+```{r, include=false}
+#write combined files to new CSVs
+write.csv(demo, "demographics.csv", row.names = FALSE)
+write.csv(diary, "diary.csv", row.names = FALSE)
+```
 
 
 
