@@ -67,13 +67,28 @@ rm(raw_demo, raw_diary, demo_names, diary_names)
 #Intermediate Cleaning Steps
 
 
-```{r}
-#replacee demo respondent age
+```{r, include = FALSE}
+#replace demo respondent age
 demo["respondent_age"][demo["respondent_age"] == "Over 80"]  <-  "89"
 demo$respondent_age <- as.numeric(demo$respondent_age)
 
-#class(demo$respondent_age) - Check for accuracty and comment out
+#class(demo$respondent_age) - Check for accuracy and comment out
 #hist(demo$respondent_age)
+```
+
+
+
+```{r}
+#replacee other adults respondent age over 80 and save as numeric data
+for (i in 35:43){  #For all adults, recode "Over 80" as 89
+  demo[i][demo[i] == "Over 80"] <- "89" 
+   demo[i] <- as.numeric(unlist(demo[i]))  #Use unlist function to perform loop on list type call
+   #(https://www.statology.org/r-list-object-cannot-be-coerced-to-type-double/)
+}
+
+#mean(demo$adult_age5, na.rm = TRUE)
+#hist(demo$adult_age5) # Check but commented out
+
 ```
 
 
@@ -85,26 +100,53 @@ class(demo$child_count) #Check for accuracty and comment out
 #hist(demo$child_count)
 ```
 
-```{r}
-#Child ages are coded as "NN Years Old"
+```{r, include=FALSE}
+#Experiment with methods of selecting numerics from strings
+
+table(demo$child1_age)
+demo$child1_age[18] #"16 Years Old
+demo$child1_age[343] #"Less than 1 Year old
+
+
+str_extract(demo$child1_age, c("\\d+")) #Select entries containing one or more digits. Will return less than one year old as "1".
+
+#NOTE: Current regex for child age status removes sensitivity to newborns
+
+sum(str_count(demo$child1_age, "Less than"), na.rm = TRUE)
+
+```
+
+```{r, include=FALSE}
+#Take all children's ages, written in strings, and rewrite as numeric for analysis. Tried to do this in a loop but couldn;'t get the indexing right. Children under 1 will be counted as 1yo's. 
+
+demo$child1_age <- as.numeric(str_extract(demo$child1_age, "\\d+"))
+demo$child2_age <- as.numeric(str_extract(demo$child2_age, "\\d+"))
+demo$child3_age <- as.numeric(str_extract(demo$child3_age, "\\d+"))
+demo$child4_age <- as.numeric(str_extract(demo$child4_age, "\\d+"))
+demo$child5_age <- as.numeric(str_extract(demo$child5_age, "\\d+"))
+demo$child6_age <- as.numeric(str_extract(demo$child6_age, "\\d+"))
+demo$child7_age <- as.numeric(str_extract(demo$child7_age, "\\d+"))
+demo$child8_age <- as.numeric(str_extract(demo$child8_age, "\\d+"))
+demo$child9_age <- as.numeric(str_extract(demo$child9_age, "\\d+"))
+demo$child10_age <- as.numeric(str_extract(demo$child10_age, "\\d+"))
+
+
+mean(demo$child7_age, na.rm = TRUE)
+
+
+demo[, 153:162] #confirm column counts for child ages
 ```
 
 
-#```{r}
-table(demo$child1_age)
-#```
 
+```{r, include=FALSE}
+#Adult ages are saved as character data. Changing to numeric. 
 
-#```{r}
+demo$adult_age1 <- as.numeric(demo$adult_age1)
 
-for (i in 1:(length(demo$child1_age))){
-  if (!is.na(demo$child1_age[i] )) {
-  print("Not NA")
-}
+demo$adult_age1
 
-
-#```
-
+```
 
 
 ```{r, include=false}
