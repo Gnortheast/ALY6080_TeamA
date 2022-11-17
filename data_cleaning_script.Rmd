@@ -57,6 +57,27 @@ colnames(demo)
 ```
 
 
+```{r}
+#install.packages("sqldf")
+library(sqldf)
+
+
+
+per_cap = sqldf("SELECT CASE WHEN income_HOH in ('Under $25k per year', '$25,000 to $49,999 per year') THEN 'Low Income'
+WHEN income_HOH in ('$50,000 to $69,999 per year', '$70,000 to $99,999 per year') THEN 'Middle Income'
+WHEN income_hoh = '$100,000 per year or higher' then 'Upper Income' ELSE NULL END AS per_cap2
+FROM demo")
+
+
+
+#replace with the new column
+demo$per_cap = per_cap$per_cap2
+
+```
+
+
+
+
 ```{r, include=FALSE}
 #remove raw d"f's from environment
 rm(raw_demo, raw_diary, demo_names, diary_names)
