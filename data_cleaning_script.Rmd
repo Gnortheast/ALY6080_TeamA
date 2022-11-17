@@ -19,7 +19,7 @@ library(readxl)
 
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, warning = FALSE}
 #Load data into environment. 
 #Requires manually renaming raw diary files to the indicated "Raw_diary" listed below. Files must be read from the same directory as this code. 
 #Ensure Raw .csv files should be encoded as UTF-8, this can be done via opening the .csv in Notepad>Save As> ... Select UTF-8 encoding and overwrite file.
