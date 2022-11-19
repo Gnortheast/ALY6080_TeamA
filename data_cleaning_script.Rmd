@@ -19,7 +19,7 @@ library(readxl)
 
 ```
 
-```{r, include=FALSE}
+```{r, include=FALSE, warning = FALSE}
 #Load data into environment. 
 #Requires manually renaming raw diary files to the indicated "Raw_diary" listed below. Files must be read from the same directory as this code. 
 #Ensure Raw .csv files should be encoded as UTF-8, this can be done via opening the .csv in Notepad>Save As> ... Select UTF-8 encoding and overwrite file.
@@ -106,7 +106,7 @@ for (i in 35:43){  #For all adults, recode "Over 80" as 89
    demo[i] <- as.numeric(unlist(demo[i]))  #Use unlist function to perform loop on list type call
    #(https://www.statology.org/r-list-object-cannot-be-coerced-to-type-double/)
 }
-
+rm(i)  #remove i variable after completed loop
 #mean(demo$adult_age5, na.rm = TRUE)
 #hist(demo$adult_age5) # Check but commented out
 
@@ -152,22 +152,40 @@ demo$child9_age <- as.numeric(str_extract(demo$child9_age, "\\d+"))
 demo$child10_age <- as.numeric(str_extract(demo$child10_age, "\\d+"))
 
 
-mean(demo$child7_age, na.rm = TRUE)
+mean(demo$child1_age, na.rm = TRUE)
 
 
 demo[, 153:162] #confirm column counts for child ages
 ```
 
 
+```{r}
+#Explore Retailer "Others"
 
-```{r, include=FALSE}
-#Adult ages are saved as character data. Changing to numeric. 
+table(diary$Grocery_Other)
 
-demo$adult_age1 <- as.numeric(demo$adult_age1)
+diary$Grocery_Other <-  str_to_lower(diary$Grocery_Other) #move all to lowercase to aid regexes
 
-demo$adult_age1
+diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "acme"), "acme")
+
+
+
+for (i in 1:length(diary$Grocery_Other)){
+  print(i)
+  
+}
+
+
+
+diary$Grocery_Other <- str_replace(diary$Grocery_Other, "aldi." , "aldi") 
+
+
+
+
+table(str_extract(diary$Grocery_Other, "Aldi"))
 
 ```
+
 
 
 ```{r, include=false}
