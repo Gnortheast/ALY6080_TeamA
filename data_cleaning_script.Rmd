@@ -15,6 +15,8 @@ knitr::opts_chunk$set(echo = TRUE)
 #install.packages("readxl")
 #install.packages("sqldf")
 
+rm(list=ls()) #Remove all objects in environment
+
 library(sqldf)
 library(tidyverse)
 library(tibble)
@@ -41,9 +43,7 @@ raw_demo <- read_xlsx("Laundry Room Diary Datafile 52 wks ending 10.16.22.xlsx",
 
 
 raw_diary <- read_xlsx("Laundry Room Diary Datafile 52 wks ending 10.16.22.xlsx", sheet = "Diary 10.18.21 to 10.16.22")
-# This method crashes down my R session. Will try read csv instead, 
 
-#raw_diary <- read.csv("Diary_Whole.csv")
 ```
 
 
@@ -86,6 +86,23 @@ rm(raw_demo, raw_diary, demo_names, diary_names, per_cap)
 #Intermediate Cleaning Steps
 
 
+```{r}
+# Order age_HOH logically
+demo["age_HOH"][demo["age_HOH"] == "Under 25 Years"] <- "(1) Under 25"
+demo["age_HOH"][demo["age_HOH"] == "25-29 Years"] <- "(2) 25-29"
+demo["age_HOH"][demo["age_HOH"] == "30-34 Years"] <- "(3) 30-34"
+demo["age_HOH"][demo["age_HOH"] == "35-39 Years"] <- "(4) 35-39"
+demo["age_HOH"][demo["age_HOH"] == "40-44 Years"] <- "(5) 40-44"
+demo["age_HOH"][demo["age_HOH"] == "45-49 Years"] <- "(6) 45-49"
+demo["age_HOH"][demo["age_HOH"] == "50-54 Years"] <- "(7) 50-54"
+demo["age_HOH"][demo["age_HOH"] == "55-64 Years"] <- "(8) 55-64"
+demo["age_HOH"][demo["age_HOH"] == "65+ Years"]   <- "(9) Over 65"
+
+
+table(demo$age_HOH)
+
+```
+
 ```{r, include = FALSE}
 #replace demo respondent age
 demo["respondent_age"][demo["respondent_age"] == "Over 80"]  <-  "89"
@@ -94,6 +111,9 @@ demo$respondent_age <- as.numeric(demo$respondent_age)
 #class(demo$respondent_age) - Check for accuracy and comment out
 #hist(demo$respondent_age)
 ```
+
+
+
 
 
 

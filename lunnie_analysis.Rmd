@@ -1,0 +1,62 @@
+---
+title: "Lunnie_Analysis"
+author: "Douglas Lunnie"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE}
+#Remove all items from global environment
+rm(list=ls())
+
+#Load required Libraries
+library(tidyverse)
+
+```
+
+```{r, include = FALSE}
+#Load Data
+
+demo <- read.csv("demographics.csv")
+diary <- read.csv("diary.csv")
+```
+
+
+## Age Cohorts - Is Age of Respondent representative of the age of the Head of Household? 
+```{r}
+#Safe to assume that reespondent is usually the HOH?
+demo %>% 
+  #filter(age_HOH == "Under 25 Years") %>% 
+  select("respondent_age", "age_HOH") %>%
+  ggplot( aes(x = respondent_age, y = age_HOH)) + geom_boxplot(position = "dodge", fill = "lightblue") +
+  scale_x_continuous(breaks = seq(25, 90, by = 5)) +
+  labs( x= "Respondent Age", y = "Head of Household Age", title = "Respondent Age IQR Corresponds with HOH Age", subtitle = "Respondent age may be used as a proxy for HOH Age Cohort") +
+    theme_minimal()
+
+```
+
+```{r}
+#Evaluate Under 40's
+under40s <- demo %>% 
+  filter(respondent_age < 41)
+
+under40s %>% 
+  ggplot( aes(x = per_cap)) +
+  geom_bar()
+
+
+
+```
+
+
