@@ -13,9 +13,14 @@ knitr::opts_chunk$set(echo = TRUE)
 #Install/Load Packages
 #install.packages("tidyverse")
 #install.packages("readxl")
+#install.packages("sqldf")
+
+library(sqldf)
 library(tidyverse)
 library(tibble)
 library(readxl)
+
+#Programming Note: Opportunity to refresh/load all packages to avoid commenting out install commands?
 
 ```
 
@@ -35,10 +40,10 @@ diary_names <-read.csv("diary_names.csv")
 raw_demo <- read_xlsx("Laundry Room Diary Datafile 52 wks ending 10.16.22.xlsx", sheet = "Demos and Segment")
 
 
-#raw_diary <- read_xlsx("Laundry Room Diary Datafile 52 wks ending 10.16.22.xlsx", sheet = "Diary 10.18.21 to 10.16.22")
+raw_diary <- read_xlsx("Laundry Room Diary Datafile 52 wks ending 10.16.22.xlsx", sheet = "Diary 10.18.21 to 10.16.22")
 # This method crashes down my R session. Will try read csv instead, 
 
-raw_diary <- read.csv("Diary_Whole.csv")
+#raw_diary <- read.csv("Diary_Whole.csv")
 ```
 
 
@@ -58,21 +63,14 @@ colnames(demo)
 
 
 ```{r}
-#install.packages("sqldf")
-library(sqldf)
-
-
-
+# Re-lcassify per capita income categories to be more consistent. - Gabriella
 per_cap = sqldf("SELECT CASE WHEN income_HOH in ('Under $25k per year', '$25,000 to $49,999 per year') THEN 'Low Income'
 WHEN income_HOH in ('$50,000 to $69,999 per year', '$70,000 to $99,999 per year') THEN 'Middle Income'
 WHEN income_hoh = '$100,000 per year or higher' then 'Upper Income' ELSE NULL END AS per_cap2
 FROM demo")
 
-
-
 #replace with the new column
 demo$per_cap = per_cap$per_cap2
-
 ```
 
 
@@ -80,7 +78,7 @@ demo$per_cap = per_cap$per_cap2
 
 ```{r, include=FALSE}
 #remove raw d"f's from environment
-rm(raw_demo, raw_diary, demo_names, diary_names)
+rm(raw_demo, raw_diary, demo_names, diary_names, per_cap)
 ```
 
 
@@ -162,7 +160,7 @@ demo[, 153:162] #confirm column counts for child ages
 ```{r}
 #Explore Retailer "Others"
 
-table(diary$Grocery_Other)
+#table(diary$Grocery_Other)
 
 diary$Grocery_Other <-  str_to_lower(diary$Grocery_Other) #move all to lowercase to aid regexes
 
@@ -170,19 +168,16 @@ diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "
 
 
 
-for (i in 1:length(diary$Grocery_Other)){
-  print(i)
-  
-}
+#for (i in 1:length(diary$Grocery_Other)){print(i)}
 
 
 
-diary$Grocery_Other <- str_replace(diary$Grocery_Other, "aldi." , "aldi") 
+#diary$Grocery_Other <- str_replace(diary$Grocery_Other, "aldi." , "aldi") 
 
 
 
 
-table(str_extract(diary$Grocery_Other, "Aldi"))
+#table(str_extract(diary$Grocery_Other, "Aldi"))
 
 ```
 
