@@ -21,6 +21,7 @@ library(sqldf)
 library(tidyverse)
 library(tibble)
 library(readxl)
+library(stringr)
 
 #Programming Note: Opportunity to refresh/load all packages to avoid commenting out install commands?
 
