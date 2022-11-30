@@ -52,11 +52,94 @@ under40s <- demo %>%
   filter(respondent_age < 41)
 
 under40s %>% 
-  ggplot( aes(x = per_cap)) +
-  geom_bar()
+  group_by(per_cap) %>% 
+  summarize(n = n()) %>%  
+  mutate(freq = n / sum(n))
 
+
+under40s %>% 
+  ggplot( aes(x = per_cap)) +
+  geom_bar(mapping = aes(x = per_cap, y = ..prop.., group = 1))+
+  scale_y_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .025), minor_breaks = NULL) +
+  labs(title = "76% of Under 40's are Middle or Lower Income", y = "Proportion", x = "Income Classification")
+ 
+#Plot the Marriage Proportions
+under40s %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = marital_code, y = ..prop.., group = 1)) +
+  scale_y_continuous(limits = c(0,.8),  breaks = seq(0, .8, by = .05), minor_breaks = NULL) +
+  labs(title = "60% of Under 40's are Married, 30% are Single", y = "Proportion", x = "Marital Status")
+
+#Own or Rent their Home
+under40s %>% 
+  group_by(own_rent) %>% 
+  summarize(n = n()) %>%  
+  mutate(freq = n / sum(n))
+
+#PLot Home Ownership Status
+under40s %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = own_rent, y = ..prop.., group = 1)) +
+  scale_y_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .05), minor_breaks = NULL) +
+  labs(title = "45% of Under 40s own their Home", subtitle = "Who are the 22% NAs?", y = "Proportion", x = "Home Ownership")
+
+
+
+#Child Status by Marital Status
+under40s %>% 
+  group_by(marital_code) %>%
+  summarize(Mean_Children = mean(child_count), SD_Children = sd(child_count))
 
 
 ```
+```{r}
 
+#Who is and isn't doing laundry?
+
+Laundry_Events <- diary %>% 
+  group_by(Res_ID) %>% 
+  count(Laundry_Event_Today.) %>% 
+  pivot_wider(names_from = Laundry_Event_Today., values_from = n)  #Takes output and spreads Y/N to new columns
+
+Laundry_Events[is.na(Laundry_Events)] = 0  #Replace NA values with 0
+ 
+Laundry_Events <- Laundry_Events %>% mutate(Total = No + Yes, prop.Y = round((Yes / Total), digits = 2 )) #Get summary columns on Laundry events
+Laundry_Events
+
+
+
+hist(Laundry_Events$prop.Y)
+
+
+ggplot(Laundry_Events, aes(x = prop.Y)) +
+  geom_histogram(binwidth = .05, fill = "#1e9fc7") +
+  labs(title = "How Often is Laundry Performed?", subtitle = "Proportion of days in the survey period where respondents performed laundry", x = "Proportion of Days Laundry is Done", y = "Households Reporting")
+```
+
+
+```{r}
+#Are families with kids doing more laundry? 
+ 
+
+Events_Demo <- left_join(Laundry_Events, demo, by = c('Res_ID' = 'respondent_id')) 
+ 
+
+unique <- length(unique(Events_Demo$Res_ID))
+reporting <- length(Events_Demo$Res_ID) 
+
+repeats <- reporting - unique #duplicate entries 5000 entries are duplicates of the same Res ID. 
+repeats/unique
+
+```
+
+
+How many duplicate res IDs are there in the demo table? 
+```{r}
+length(demo$respondent_id)
+length(unique(demo$respondent_id)) 
+
+# A lot. How to condense them all into 
+length(unique(diary$Res_ID))
+
+```
 
