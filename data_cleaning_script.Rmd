@@ -21,7 +21,6 @@ library(sqldf)
 library(tidyverse)
 library(tibble)
 library(readxl)
-library(stringr)
 
 #Programming Note: Opportunity to refresh/load all packages to avoid commenting out install commands?
 
@@ -61,6 +60,14 @@ demo <- raw_demo
 colnames(demo) <- colnames(demo_names)
 colnames(demo)
 ```
+
+
+CLean out duplicate entries in demo
+```{r}
+demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
+
+```
+
 
 
 ```{r}
@@ -204,24 +211,12 @@ diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "
 
 
 
-
-#Additional subsets for Tableau analysis
-```{r}
-#Subset for only yes laundry days 
-diary_subset = diary[diary$Laundry_Event_Today. %in% c("Yes"),] #number of rows decreases from 93,705 to 45,043 that did laundry
-```
-
-
-
-
-
-
-
 ```{r, include=false}
 #write combined files to new CSVs
 write.csv(demo, "demographics.csv", row.names = FALSE)
 write.csv(diary, "diary.csv", row.names = FALSE)
-write.csv(diary_subset, "diary_subset.csv", row.names=FALSE)
+write.csv(demo_unique, "demo_unique.csv", row.names = FALSE)
+
 ```
 
 
