@@ -21,15 +21,20 @@ knitr::opts_chunk$set(echo = TRUE)
 rm(list=ls())
 
 #Load required Libraries
+#install.packages("tidyverse")
+#install.packages("ggpubr")
+
 library(tidyverse)
+library(ggpubr)
 
 ```
 
 ```{r, include = FALSE}
 #Load Data
 
-demo <- read.csv("demographics.csv")
+demo_original <- read.csv("demographics.csv")
 diary <- read.csv("diary.csv")
+demo <- read.csv("demo_unique.csv")
 ```
 
 
@@ -48,6 +53,10 @@ demo %>%
 
 ```{r}
 #Evaluate Under 40's
+```
+
+## Age Cohort - Under 40
+```{r}
 under40s <- demo %>% 
   filter(respondent_age < 41)
 
@@ -55,45 +64,62 @@ under40s %>%
   group_by(per_cap) %>% 
   summarize(n = n()) %>%  
   mutate(freq = n / sum(n))
+```
 
-
+### Under 40 - Income Distribution
+```{r}
 under40s %>% 
   ggplot( aes(x = per_cap)) +
   geom_bar(mapping = aes(x = per_cap, y = ..prop.., group = 1))+
   scale_y_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .025), minor_breaks = NULL) +
   labs(title = "76% of Under 40's are Middle or Lower Income", y = "Proportion", x = "Income Classification")
- 
+```
+
+### Under 40 - Marital Status
+
+```{r}
 #Plot the Marriage Proportions
 under40s %>% 
   ggplot() +
   geom_bar(mapping = aes(x = marital_code, y = ..prop.., group = 1)) +
   scale_y_continuous(limits = c(0,.8),  breaks = seq(0, .8, by = .05), minor_breaks = NULL) +
   labs(title = "60% of Under 40's are Married, 30% are Single", y = "Proportion", x = "Marital Status")
+```
 
+### Under 40 - Own/Rent Frequency
+
+```{r}
 #Own or Rent their Home
 under40s %>% 
   group_by(own_rent) %>% 
   summarize(n = n()) %>%  
   mutate(freq = n / sum(n))
+```
 
+### Under 40s - Onw/Rent Plot
+
+```{r}
 #PLot Home Ownership Status
 under40s %>% 
   ggplot() +
   geom_bar(mapping = aes(x = own_rent, y = ..prop.., group = 1)) +
   scale_y_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .05), minor_breaks = NULL) +
   labs(title = "45% of Under 40s own their Home", subtitle = "Who are the 22% NAs?", y = "Proportion", x = "Home Ownership")
+```
 
 
+### Under 40s - Children
 
+```{r}
 #Child Status by Marital Status
 under40s %>% 
   group_by(marital_code) %>%
   summarize(Mean_Children = mean(child_count), SD_Children = sd(child_count))
-
-
 ```
-```{r}
 
+### Laundry Events Histograms
+
+```{r}
 #Who is and isn't doing laundry?
 
 Laundry_Events <- diary %>% 
@@ -120,26 +146,46 @@ ggplot(Laundry_Events, aes(x = prop.Y)) +
 ```{r}
 #Are families with kids doing more laundry? 
  
-
 Events_Demo <- left_join(Laundry_Events, demo, by = c('Res_ID' = 'respondent_id')) 
  
+```
 
-unique <- length(unique(Events_Demo$Res_ID))
-reporting <- length(Events_Demo$Res_ID) 
 
-repeats <- reporting - unique #duplicate entries 5000 entries are duplicates of the same Res ID. 
-repeats/unique
+
+
+
+```{r}
+events_children <- Events_Demo %>%
+  filter(child_count > 0)
+
+
+events_no_children <- Events_Demo %>%
+  filter(child_count == 0)
+```
+
+
+### Households w/ children
+
+```{r}
+events_children %>%
+  ggplot(aes(x = prop.Y)) +
+  geom_histogram(binwidth = .05, fill = "#1e9fc7") +
+  labs(title = "Laundry Frequency - Households with Children", subtitle = "Households with Children", x = "Proportion of Days Laundry is Done", y = "Households Reporting") 
 
 ```
 
 
-How many duplicate res IDs are there in the demo table? 
+### No Children
+
 ```{r}
-length(demo$respondent_id)
-length(unique(demo$respondent_id)) 
+events_no_children %>%
+  ggplot(aes(x = prop.Y)) +
+  geom_histogram(binwidth = .05, fill = "#1e9fc7") +
+  labs(title = "Laundry Frequency - Households without Children", subtitle = "Households with Children", x = "Proportion of Days Laundry is Done", y = "Households Reporting")
 
-# A lot. How to condense them all into 
-length(unique(diary$Res_ID))
 
+ggqqplot(events_no_children$prop.Y)
+
+shapiro.test(events_no_children$prop.Y)
 ```
 
