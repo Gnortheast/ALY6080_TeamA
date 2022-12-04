@@ -27,6 +27,9 @@ rm(list=ls())
 library(tidyverse)
 library(ggpubr)
 
+
+options(digits = 2)
+
 ```
 
 ```{r, include = FALSE}
@@ -36,6 +39,135 @@ demo_original <- read.csv("demographics.csv")
 diary <- read.csv("diary.csv")
 demo <- read.csv("demo_unique.csv")
 ```
+
+# Evaluate VIA's Segmentation Categories
+
+"Segment" data, a recoding of the audience's self-description. 
+Is there some relationship with the respondent's attitude toward their laundry and their demographic information? 
+```{r}
+
+demo %>% 
+  group_by(segment) %>%
+  summarize(Count = n()) %>%
+  mutate(Percent = 100*(Count/sum(Count)))
+  
+
+demo %>% #Possible distnction by age
+  ggplot(aes(y = segment, x = respondent_age)) + geom_boxplot()
+
+
+demo %>% #slight distinction by family size **
+  ggplot(aes(y = segment, x = HH_COUNT)) + geom_boxplot()
+
+
+demo %>% # No distinction by child count
+  ggplot(aes(y = segment, x = child_count)) + geom_boxplot()
+
+demo  %>%  #No distinction by Income
+  ggplot(aes(y = segment, x = per_cap)) + 
+  geom_count()
+
+demo  %>%  #No distinction by Income
+  ggplot(aes(y = segment, x = fem_edu_HOH)) + 
+  geom_count()
+
+demo  %>%  #No distinction by Income
+  ggplot(aes(y = segment, x = male_edu_HOH)) + 
+  geom_count()
+
+
+demo  %>%  #No distinction by Marraige
+  ggplot(aes(y = segment, x = marital_code)) + 
+  geom_count()
+
+```
+
+## What about Behavior invormation
+
+
+### Establish Laundry Occurrence Data
+
+It's noted that many respondents did not answer the "Event Count Today" Query accurately. It should have at least as many entries as the "Yes" responses in the "Laundry Event Today" query. 32662 events were counted by this method, while 45043 dairy entries exhibited "Yes" for at least a single laundry event. 
+
+
+
+```{r}
+table(diary$Event_Count_Today)
+events <- sum(diary$Event_Count_Today, na.rm = TRUE)
+
+
+table(diary$Laundry_Event_Today.)
+
+
+
+
+```
+
+
+```{r}
+diary
+
+diary1 <- within(diary, {
+    f <- Laundry_Event_Today. == 'Yes' & Event_Count_Today
+    Event_Count_Today[f] <- 1
+    }) 
+
+
+
+```
+
+
+
+
+```{r}
+#combine all events in Event_Count_Today by Res_ID. Differentiates between event today? Yes No and allows for inclusion of multiple events per day. 
+eventcount <- diary %>%
+  group_by(Res_ID) %>%
+   tally(Event_Count_Today)
+
+
+```
+
+
+
+###
+
+```{r, include = false}
+
+#Create the laundry events demo table linkage earlier to accomodate the segmentation evaluation
+
+Laundry_Events <- diary %>% 
+  group_by(Res_ID) %>% 
+  count(Laundry_Event_Today.) %>% 
+  pivot_wider(names_from = Laundry_Event_Today., values_from = n)  #Takes output and spreads Y/N to new columns
+
+Laundry_Events[is.na(Laundry_Events)] = 0  #Replace NA values with 0
+ 
+Laundry_Events <- Laundry_Events %>% mutate(Total_Days = No + Yes, prop_days = round((Yes / Total_Days), digits = 2 )) #Get summary columns on Laundry events
+
+Laundry_Events <- left_join(Laundry_Events, eventcount, by = 'Res_ID') 
+
+Events_Demo <- left_join(Laundry_Events, demo, by = c('Res_ID' = 'respondent_id'))  #Link Laundry Events table with Demographic data
+
+```
+
+### Market Segmentation Laundry Use Rate. 
+Note scale is n
+
+```{r}
+Events_Demo %>%
+  #filter(segment == "MELLOW METHODICALS") %>%
+  ggplot(aes(x = prop.Y)) +
+  geom_histogram(aes(y = ..count../sum(..count..)),binwidth = .05, fill = "#1e9fc7") + 
+ # scale_y_continuous(limits = c(0, .15)) +
+  labs(title = "How Often is Laundry Performed?", subtitle = "Proportion of days in the survey period where respondents performed laundry", x = "Proportion of Days Laundry is Done", y = "Households Reporting") + 
+  facet_wrap(vars(segment), scales = "free")
+# This isnt particulary descriptive and I'm having trouble normalizing it. Maybe try a boxplot.
+
+```
+
+
+
 
 
 ## Age Cohorts - Is Age of Respondent representative of the age of the Head of Household? 
@@ -122,18 +254,6 @@ under40s %>%
 ```{r}
 #Who is and isn't doing laundry?
 
-Laundry_Events <- diary %>% 
-  group_by(Res_ID) %>% 
-  count(Laundry_Event_Today.) %>% 
-  pivot_wider(names_from = Laundry_Event_Today., values_from = n)  #Takes output and spreads Y/N to new columns
-
-Laundry_Events[is.na(Laundry_Events)] = 0  #Replace NA values with 0
- 
-Laundry_Events <- Laundry_Events %>% mutate(Total = No + Yes, prop.Y = round((Yes / Total), digits = 2 )) #Get summary columns on Laundry events
-Laundry_Events
-
-
-
 hist(Laundry_Events$prop.Y)
 
 
@@ -143,17 +263,9 @@ ggplot(Laundry_Events, aes(x = prop.Y)) +
 ```
 
 
-```{r}
-#Are families with kids doing more laundry? 
+
+## Are families with kids doing more laundry? 
  
-Events_Demo <- left_join(Laundry_Events, demo, by = c('Res_ID' = 'respondent_id')) 
- 
-```
-
-
-
-
-
 ```{r}
 events_children <- Events_Demo %>%
   filter(child_count > 0)

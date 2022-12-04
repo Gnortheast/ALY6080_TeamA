@@ -62,13 +62,6 @@ colnames(demo)
 ```
 
 
-CLean out duplicate entries in demo
-```{r}
-demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
-
-```
-
-
 
 ```{r}
 # Re-lcassify per capita income categories to be more consistent. - Gabriella
@@ -121,6 +114,13 @@ demo$respondent_age <- as.numeric(demo$respondent_age)
 ```
 
 
+```{r}
+
+#replace segment typo
+demo["segment"][demo["segment"] == "PASSSIONATE OPTIMIZER"]  <-  "PASSIONATE OPTIMIZERS"
+table(demo$segment)
+
+```
 
 
 
@@ -210,6 +210,12 @@ diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "
 ```
 
 
+
+CLean out duplicate entries in demo
+```{r}
+demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
+
+```
 
 ```{r, include=false}
 #write combined files to new CSVs
