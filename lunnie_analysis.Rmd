@@ -28,7 +28,7 @@ library(tidyverse)
 library(ggpubr)
 
 
-options(digits = 2)
+
 
 ```
 
@@ -93,37 +93,20 @@ It's noted that many respondents did not answer the "Event Count Today" Query ac
 
 ```{r}
 table(diary$Event_Count_Today)
-events <- sum(diary$Event_Count_Today, na.rm = TRUE)
+events <- sum(diary$Event_Count_Today, na.rm = TRUE) #61921 Laundry Events
 
-
-table(diary$Laundry_Event_Today.)
-
-
-
-
-```
-
-
-```{r}
-diary
-
-diary1 <- within(diary, {
-    f <- Laundry_Event_Today. == 'Yes' & Event_Count_Today
-    Event_Count_Today[f] <- 1
-    }) 
-
-
+table(diary$Laundry_Event_Today.) #48662 Days Laundry performed
 
 ```
 
 
 
 
+
+
+
 ```{r}
-#combine all events in Event_Count_Today by Res_ID. Differentiates between event today? Yes No and allows for inclusion of multiple events per day. 
-eventcount <- diary %>%
-  group_by(Res_ID) %>%
-   tally(Event_Count_Today)
+
 
 
 ```
@@ -134,6 +117,13 @@ eventcount <- diary %>%
 
 ```{r, include = false}
 
+
+
+#combine all events in Event_Count_Today by Res_ID. Differentiates between event today? Yes No and allows for inclusion of multiple events per day. 
+eventcount <- diary %>%
+  group_by(Res_ID) %>%
+   tally(Event_Count_Today)
+
 #Create the laundry events demo table linkage earlier to accomodate the segmentation evaluation
 
 Laundry_Events <- diary %>% 
@@ -142,31 +132,67 @@ Laundry_Events <- diary %>%
   pivot_wider(names_from = Laundry_Event_Today., values_from = n)  #Takes output and spreads Y/N to new columns
 
 Laundry_Events[is.na(Laundry_Events)] = 0  #Replace NA values with 0
- 
-Laundry_Events <- Laundry_Events %>% mutate(Total_Days = No + Yes, prop_days = round((Yes / Total_Days), digits = 2 )) #Get summary columns on Laundry events
+Laundry_Events <- left_join(Laundry_Events, eventcount, by = 'Res_ID')  
+Laundry_Events <- Laundry_Events %>% mutate(Total_Days = No + Yes, Prop_Days = round((Yes / Total_Days), digits = 2 )) #Get summary columns on Laundry events
+Laundry_Events <- rename(Laundry_Events, Total_Events = n, Days_Yes = Yes, Days_No = No)
+Laundry_Events <- Laundry_Events %>% mutate(Events_Per_Day = Total_Events / Days_Yes)
 
-Laundry_Events <- left_join(Laundry_Events, eventcount, by = 'Res_ID') 
+
+
 
 Events_Demo <- left_join(Laundry_Events, demo, by = c('Res_ID' = 'respondent_id'))  #Link Laundry Events table with Demographic data
 
 ```
 
 ### Market Segmentation Laundry Use Rate. 
-Note scale is n
 
+Note scale is n
 ```{r}
-Events_Demo %>%
+Events_Demo %>% 
+     ggplot( aes(x = Prop_Days, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
+  #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
+  labs( x= "Proportion of Days", y = "Segment", title = "Segment Day Rate", subtitle = "Do the Segments perform Laundry more or less often?") +
+    theme_minimal()
+```
+```{r}
+Events_Demo %>% 
+      ggplot( aes(x = Events_Per_Day, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
+  #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
+  labs( x= "Events per Day", y = "Segment", title = "Segment Day Volume", subtitle = "Do the Segments perform multiples on lauundry days?") +
+    theme_minimal()
+```
+
+
+
+
+### REMOVE THIS BLOCK
+```{r}
+#This is good code but the plot isn't as effective as the boxplots above. Saving for now but will look at more later. 
+Events_Demo %>% 
   #filter(segment == "MELLOW METHODICALS") %>%
-  ggplot(aes(x = prop.Y)) +
+  ggplot(aes(x = Events_Per_Day)) +
   geom_histogram(aes(y = ..count../sum(..count..)),binwidth = .05, fill = "#1e9fc7") + 
- # scale_y_continuous(limits = c(0, .15)) +
-  labs(title = "How Often is Laundry Performed?", subtitle = "Proportion of days in the survey period where respondents performed laundry", x = "Proportion of Days Laundry is Done", y = "Households Reporting") + 
+  scale_x_continuous(limits = c(.9, 3)) +
+  labs(title = "How Many Loads per Day?", subtitle = "Mean Loads per day for days when laundry is performed", x = "Proportion of Days Laundry is Done", y = "Households Reporting") + 
   facet_wrap(vars(segment), scales = "free")
 # This isnt particulary descriptive and I'm having trouble normalizing it. Maybe try a boxplot.
 
 ```
 
 
+
+
+```{r}
+Events_Demo %>%
+ ggplot( aes(x = per_cap)) +
+  geom_bar(mapping = aes(x = ..prop.., y = per_cap, group = 1), fill = "#1e9fc7")+
+  scale_x_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .1), minor_breaks = NULL) +
+  labs(title = "Segment Income Distributions", y = "Income Category", x = "Proportion") +
+facet_wrap(vars(segment), scales = "free")
+
+```
+
+ 
 
 
 

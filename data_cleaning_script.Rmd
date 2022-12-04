@@ -122,6 +122,21 @@ table(demo$segment)
 
 ```
 
+```{r}
+diary
+
+
+# Check for conditions where a laundry event was recorded but not entered in "event count today" and then update the event count to 1 to allow subsequent tally of individual loads. 
+diary <- within(diary, {
+    f <- Laundry_Event_Today. == 'Yes' & is.na(Event_Count_Today)
+    Event_Count_Today[f] <- 1
+    }) 
+
+
+```
+
+
+
 
 
 
