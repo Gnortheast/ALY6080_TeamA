@@ -21,6 +21,7 @@ library(sqldf)
 library(tidyverse)
 library(tibble)
 library(readxl)
+library(dplyr)
 
 #Programming Note: Opportunity to refresh/load all packages to avoid commenting out install commands?
 
@@ -232,12 +233,51 @@ demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
 
 ```
 
+
+
+#The code below creates a subset of the data for those that did laundry 
+and joins the demo data to the diary data based on the last demo entry. 
+
+A csv is created for the customer view dashboard (Gabriella)
+
+```{r}
+#need to have same variable name for merge together, add column that matches demo respondent id
+names(diary)[1]<- "respondent_id"
+
+#Subset for only yes laundry days 
+#mutiple ids per laundry event for # of days laundry was done
+diary_subset = diary[diary$Laundry_Event_Today. %in% c("Yes"),] #number of rows decreases from 93,705 to 45,043 for the number of times laundry was done
+
+demo_diary = sqldf("SELECT ds.*
+,demo1.*
+FROM diary_subset ds
+
+inner join 
+
+(SELECT respondent_id
+,Segment
+,row_number() OVER(PARTITION BY respondent_id order by diary_start_date desc) as rownum
+from demo AS D
+) as demo1
+on demo1.respondent_id=ds.respondent_id
+
+where rownum=1")
+
+
+```
+
+
+
+
+
+
+
 ```{r, include=false}
 #write combined files to new CSVs
 write.csv(demo, "demographics.csv", row.names = FALSE)
 write.csv(diary, "diary.csv", row.names = FALSE)
 write.csv(demo_unique, "demo_unique.csv", row.names = FALSE)
-
+write.csv(demo_diary, "demo_diarysubset.csv", row.names=FALSE)
 ```
 
 
