@@ -40,85 +40,148 @@ diary <- read.csv("diary.csv")
 demo <- read.csv("demo_unique.csv")
 ```
 
-# Evaluate VIA's Segmentation Categories
+# Demographic Rundown - 
 
-"Segment" data, a recoding of the audience's self-description. 
-Is there some relationship with the respondent's attitude toward their laundry and their demographic information? 
-```{r}
+## Evaluate VIA's Segmentation Categories
 
-demo %>% 
+"Segment" data, which is a VIA recoding of the audience's self-reported attitude in the laundry room. 
+The following plots explored possible relationships between respondent's 'laundry attitude' and their demographic information. 
+There were no salient features of note in the demographic data, but behavior  
+
+
+
+```{r, echo = FALSE}
+segment <- demo %>% 
   group_by(segment) %>%
-  summarize(Count = n()) %>%
-  mutate(Percent = 100*(Count/sum(Count)))
-  
+    summarize(Count = n()) %>%
+  mutate(Percent = round(100*(Count/sum(Count)), digits = 2))
 
-demo %>% #Possible distnction by age
-  ggplot(aes(y = segment, x = respondent_age)) + geom_boxplot()
+segment <- segment %>% arrange(Count )
 
-
-demo %>% #slight distinction by family size **
-  ggplot(aes(y = segment, x = HH_COUNT)) + geom_boxplot()
-
-
-demo %>% # No distinction by child count
-  ggplot(aes(y = segment, x = child_count)) + geom_boxplot()
-
-demo  %>%  #No distinction by Income
-  ggplot(aes(y = segment, x = per_cap)) + 
-  geom_count()
-
-demo  %>%  #No distinction by Income
-  ggplot(aes(y = segment, x = fem_edu_HOH)) + 
-  geom_count()
-
-demo  %>%  #No distinction by Income
-  ggplot(aes(y = segment, x = male_edu_HOH)) + 
-  geom_count()
-
-
-demo  %>%  #No distinction by Marraige
-  ggplot(aes(y = segment, x = marital_code)) + 
-  geom_count()
 
 ```
 
-## What about Behavior invormation
+## Segmentation Size Breakdown
+
+As segmentation was a new feature with recent data, NA's are present and represent 37% of the entries. They were kept as a reminder that the segmentation data is only partially representative of the entire Sample.  
+
+```{r, echo = FALSE}
+segment
+
+segment %>% 
+ # group_by(segment) %>%
+ # arrange(Count) %>%
+  ggplot(aes(x = reorder(segment, Count), y = Count)) +
+  geom_bar(stat = 'identity', fill = "#1e9fc7") +
+  coord_flip() +
+  labs( x= "", y = "Count of Respondents", title = "Segment Population", subtitle = "Mellow Methodicals Dominate") +
+   theme_minimal() 
+ # theme(axis.text.x = element_text(angle = 90))
+
+```
+
+## Segment Demograpic Patterns
+
+### Segmentation - Age
+```{r, echo = FALSE}
+demo %>% #Possible distnction by age
+  ggplot(aes(y = segment, x = respondent_age)) + geom_boxplot(fill = "#1e9fc7") + 
+  labs( x= "Respondent Age", y = "", title = "Segment Age Distribution", subtitle = "Avoiders and Strivers skewed youngest") +
+    theme_minimal()
+```
 
 
-### Establish Laundry Occurrence Data
+### Segmentation - Family Size
+```{r, echo = FALSE}
+demo %>% #slight distinction by family size **
+  ggplot(aes(y = segment, x = HH_COUNT)) + geom_boxplot(fill = "#1e9fc7") + 
+  labs( x= "Household Count", y = "", title = "Segment - Family Size", subtitle = "Are Optimizers forced to Optimize by workload or experience?") +
+    theme_minimal()
+```
 
-It's noted that many respondents did not answer the "Event Count Today" Query accurately. It should have at least as many entries as the "Yes" responses in the "Laundry Event Today" query. 32662 events were counted by this method, while 45043 dairy entries exhibited "Yes" for at least a single laundry event. 
+
+### Segmentation - Children
+```{r, echo = FALSE}
+demo %>% # No distinction by child count
+  ggplot(aes(y = segment, x = child_count)) + geom_boxplot(fill = "#1e9fc7") + 
+  labs( x= "Child Count", y = "", title = "Segment - Children", subtitle = "No distinction with child count") +
+    theme_minimal()
+```
+
+### Segmentation - Income
+
+```{r, echo = FALSE}
+
+demo %>%
+ ggplot( aes(x = per_cap)) +
+  geom_bar(mapping = aes(x = ..prop.., y = per_cap, group = 1), fill = "#1e9fc7")+
+  scale_x_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .1), minor_breaks = NULL) +
+  labs(title = "Segment Income Distributions", y = "", x = "Proportion") +
+facet_wrap(vars(segment), scales = "free")
 
 
+```
 
-```{r}
+
+### Segmentation - Female HOH Education
+```{r, echo = FALSE}
+demo %>% 
+  ggplot(aes(x = fem_edu_HOH, y = segment)) + 
+  geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
+  stat_smooth() +
+     labs(x = "Female HOH Education", y = "", title = "Segmentation and Education", subtitle = "No Clear Patterns in Female HOH Education") +
+   scale_fill_brewer(palette = "BuGn") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+### Segmentation - Male HOH Education
+```{r, echo = FALSE}
+demo %>% 
+  ggplot(aes(x = male_edu_HOH, y = segment)) + 
+  geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
+  stat_smooth() +
+     labs(x = "Male HOH Education", y = "", title = "Segmentation and Education", subtitle = "No Clear Patterns in Male HOH Education") +
+   scale_fill_brewer(palette = "BuGn") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r, echo = FALSE}
+demo %>% 
+  ggplot(aes(x = marital_code, y = segment)) + 
+  geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
+  stat_smooth() +
+     labs(x = "", y = "", title = "Segmentation and Marital Status", subtitle = "Patterns in Marriage ") +
+   scale_fill_brewer(palette = "BuGn") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r, echo = FALSE}
+```
+
+## General Behavior of the Population - Laundry Event Frequency
+
+More insight may be gained by exploring which populations perform laundry at different rates and how laundry activity is concentrated on days where laundry is performed. It's notable here that there were numerous participants who engaged in multiple iterations of the study, almost half the participants 
+
+```{r, include = FALSE}
+#Inline Cleaning Function Check
+
+#It's noted that many respondents did not answer the "Event Count Today" Query accurately. It should have at least as many entries as the "Yes" responses in the "Laundry Event Today" query. 32662 events were counted by this method, while 45043 dairy entries exhibited "Yes" for at least a single laundry event. 
+
 table(diary$Event_Count_Today)
 events <- sum(diary$Event_Count_Today, na.rm = TRUE) #61921 Laundry Events
-
 table(diary$Laundry_Event_Today.) #48662 Days Laundry performed
-
 ```
 
 
 
+```{r, echo = FALSE}
 
-
-
-
-```{r}
-
-
-
-```
-
-
-
-###
-
-```{r, include = false}
-
-
-
+#Establish Events Data Frame
 #combine all events in Event_Count_Today by Res_ID. Differentiates between event today? Yes No and allows for inclusion of multiple events per day. 
 eventcount <- diary %>%
   group_by(Res_ID) %>%
@@ -138,27 +201,43 @@ Laundry_Events <- rename(Laundry_Events, Total_Events = n, Days_Yes = Yes, Days_
 Laundry_Events <- Laundry_Events %>% mutate(Events_Per_Day = Total_Events / Days_Yes)
 
 
-
-
 Events_Demo <- left_join(Laundry_Events, demo, by = c('Res_ID' = 'respondent_id'))  #Link Laundry Events table with Demographic data
+```
+
+## Laundry Use Stats - 
+Detail events and 
+
+```{r}
+
+
+
+
 
 ```
+
+
 
 ### Market Segmentation Laundry Use Rate. 
 
-Note scale is n
-```{r}
+Keeping in line with the segmentation, some more notable patterns emerge with behavior. This may mean that the respondent's answer is indicative of how the household manages laundry, ranging from a fun activity, to a neutral task to manage, to a drudgery.
+
+Behavior distinctions are evident with some of the segments, with Optimizers performing more often (0.5) and Avoiders less engaged (.38). 
+```{r, echo = FALSE}
 Events_Demo %>% 
      ggplot( aes(x = Prop_Days, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
   #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
-  labs( x= "Proportion of Days", y = "Segment", title = "Segment Day Rate", subtitle = "Do the Segments perform Laundry more or less often?") +
+  labs( x= "Proportion of Days", y = "", title = "Segment Day Rate", subtitle = "Do the Segments perform Laundry more or less often?") +
     theme_minimal()
 ```
-```{r}
+
+### Market Segmentation - Loads per Day
+
+Fewer distinctions for concentration of loads in a given day. It's evident that Avoiders perform fewer loads on fewer days. 
+```{r, echo = FALSE}
 Events_Demo %>% 
       ggplot( aes(x = Events_Per_Day, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
   #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
-  labs( x= "Events per Day", y = "Segment", title = "Segment Day Volume", subtitle = "Do the Segments perform multiples on lauundry days?") +
+  labs( x= "Events per Day", y = "", title = "Segment Day Volume", subtitle = "Do the Segments perform multiples on laundry days?") +
     theme_minimal()
 ```
 
@@ -166,7 +245,7 @@ Events_Demo %>%
 
 
 ### REMOVE THIS BLOCK
-```{r}
+```{r, echo = FALSE}
 #This is good code but the plot isn't as effective as the boxplots above. Saving for now but will look at more later. 
 Events_Demo %>% 
   #filter(segment == "MELLOW METHODICALS") %>%
@@ -180,25 +259,14 @@ Events_Demo %>%
 ```
 
 
+## Age Cohorts - Is Age of Respondent vs. Head of Household? 
 
+We must ask if the survey respondent is generally representative of the Head of Household, or the "Laundry Authority" in the home.
+In all cases, the Interquartile Range, "IQR", or the 50% about the mean, of the respondents falls neatly within the Head of Household age classification. 
+For most homes in the study, it's safe to assume that the respondent is the Head of Household or their spouse. 
 
-```{r}
-Events_Demo %>%
- ggplot( aes(x = per_cap)) +
-  geom_bar(mapping = aes(x = ..prop.., y = per_cap, group = 1), fill = "#1e9fc7")+
-  scale_x_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .1), minor_breaks = NULL) +
-  labs(title = "Segment Income Distributions", y = "Income Category", x = "Proportion") +
-facet_wrap(vars(segment), scales = "free")
-
-```
-
- 
-
-
-
-## Age Cohorts - Is Age of Respondent representative of the age of the Head of Household? 
-```{r}
-#Safe to assume that reespondent is usually the HOH?
+```{r, echo = FALSE}
+#Safe to assume that respondent is usually the HOH?
 demo %>% 
   #filter(age_HOH == "Under 25 Years") %>% 
   select("respondent_age", "age_HOH") %>%
@@ -209,12 +277,15 @@ demo %>%
 
 ```
 
-```{r}
+```{r, echo = FALSE}
 #Evaluate Under 40's
 ```
+### Under 40 Cohort
+
+
 
 ## Age Cohort - Under 40
-```{r}
+```{r, echo = FALSE}
 under40s <- demo %>% 
   filter(respondent_age < 41)
 
@@ -225,7 +296,7 @@ under40s %>%
 ```
 
 ### Under 40 - Income Distribution
-```{r}
+```{r, echo = FALSE}
 under40s %>% 
   ggplot( aes(x = per_cap)) +
   geom_bar(mapping = aes(x = per_cap, y = ..prop.., group = 1))+
@@ -235,7 +306,7 @@ under40s %>%
 
 ### Under 40 - Marital Status
 
-```{r}
+```{r, echo = FALSE}
 #Plot the Marriage Proportions
 under40s %>% 
   ggplot() +
@@ -246,7 +317,7 @@ under40s %>%
 
 ### Under 40 - Own/Rent Frequency
 
-```{r}
+```{r, echo = FALSE}
 #Own or Rent their Home
 under40s %>% 
   group_by(own_rent) %>% 
@@ -256,7 +327,7 @@ under40s %>%
 
 ### Under 40s - Onw/Rent Plot
 
-```{r}
+```{r, echo = FALSE}
 #PLot Home Ownership Status
 under40s %>% 
   ggplot() +
@@ -268,7 +339,7 @@ under40s %>%
 
 ### Under 40s - Children
 
-```{r}
+```{r, echo = FALSE}
 #Child Status by Marital Status
 under40s %>% 
   group_by(marital_code) %>%
@@ -277,22 +348,22 @@ under40s %>%
 
 ### Laundry Events Histograms
 
-```{r}
+```{r, echo = FALSE}
 #Who is and isn't doing laundry?
 
-hist(Laundry_Events$prop.Y)
+hist(Laundry_Events$Prop_Days )
 
 
-ggplot(Laundry_Events, aes(x = prop.Y)) +
-  geom_histogram(binwidth = .05, fill = "#1e9fc7") +
-  labs(title = "How Often is Laundry Performed?", subtitle = "Proportion of days in the survey period where respondents performed laundry", x = "Proportion of Days Laundry is Done", y = "Households Reporting")
+#ggplot(Laundry_Events, aes(x = prop.Y)) +
+ # geom_histogram(binwidth = .05, fill = "#1e9fc7") +
+  #labs(title = "How Often is Laundry Performed?", subtitle = "Proportion of days in the survey period where respondents performed laundry", x = "Proportion of Days Laundry is Done", y = "Households Reporting")
 ```
 
 
 
 ## Are families with kids doing more laundry? 
  
-```{r}
+```{r, echo = FALSE}
 events_children <- Events_Demo %>%
   filter(child_count > 0)
 
@@ -304,9 +375,9 @@ events_no_children <- Events_Demo %>%
 
 ### Households w/ children
 
-```{r}
+```{r, echo = FALSE}
 events_children %>%
-  ggplot(aes(x = prop.Y)) +
+  ggplot(aes(x = Prop_Days)) +
   geom_histogram(binwidth = .05, fill = "#1e9fc7") +
   labs(title = "Laundry Frequency - Households with Children", subtitle = "Households with Children", x = "Proportion of Days Laundry is Done", y = "Households Reporting") 
 
@@ -315,15 +386,15 @@ events_children %>%
 
 ### No Children
 
-```{r}
+```{r, echo = FALSE}
 events_no_children %>%
-  ggplot(aes(x = prop.Y)) +
+  ggplot(aes(x = Prop_Days)) +
   geom_histogram(binwidth = .05, fill = "#1e9fc7") +
   labs(title = "Laundry Frequency - Households without Children", subtitle = "Households with Children", x = "Proportion of Days Laundry is Done", y = "Households Reporting")
 
 
-ggqqplot(events_no_children$prop.Y)
+#ggqqplot(events_no_children$prop.Y)
 
-shapiro.test(events_no_children$prop.Y)
+#shapiro.test(events_no_children$prop.Y)
 ```
 
