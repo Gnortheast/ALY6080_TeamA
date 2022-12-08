@@ -1,0 +1,614 @@
+---
+title: "Lunnie_Beliveau_Analysis"
+author: "Douglas Lunnie"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      toc_collapsed: true
+    toc_depth: 4
+    number_sections: true
+    theme: lumen
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include = FALSE}
+#Remove all items from global environment
+rm(list=ls())
+
+#Load required Libraries
+#install.packages("tidyverse")
+#install.packages("ggpubr")
+
+library(tidyverse)
+library(ggpubr)
+
+
+
+
+```
+
+```{r, include = FALSE}
+#Load Data
+
+demo_original <- read.csv("demographics.csv")
+diary <- read.csv("diary.csv")
+demo <- read.csv("demo_unique.csv")
+```
+
+# Demographic Rundown - 
+
+## Evaluate VIA's Segmentation Categories
+
+"Segment" data, which is a VIA recoding of the audience's self-reported attitude in the laundry room. 
+The following plots explored possible relationships between respondent's 'laundry attitude' and their demographic information. 
+There were no salient features of note in the demographic data, but behavior  
+
+
+
+```{r, echo = FALSE}
+segment <- demo %>% 
+  group_by(segment) %>%
+    summarize(Count = n()) %>%
+  mutate(Percent = round(100*(Count/sum(Count)), digits = 2))
+
+segment <- segment %>% arrange(Count )
+
+
+```
+
+## Segmentation Size Breakdown
+
+As segmentation was a new feature with recent data, NA's are present and represent 37% of the entries. They were kept as a reminder that the segmentation data is only partially representative of the entire Sample.  
+
+```{r, echo = FALSE}
+segment
+
+segment %>% 
+ # group_by(segment) %>%
+ # arrange(Count) %>%
+  ggplot(aes(x = reorder(segment, Count), y = Count)) +
+  geom_bar(stat = 'identity', fill = "#1e9fc7") +
+  coord_flip() +
+  labs( x= "", y = "Count of Respondents", title = "Segment Population", subtitle = "Mellow Methodicals Dominate") +
+   theme_minimal() 
+ # theme(axis.text.x = element_text(angle = 90))
+
+```
+
+## Segment Demograpic Patterns
+
+### Segmentation - Age
+```{r, echo = FALSE}
+demo %>% #Possible distnction by age
+  ggplot(aes(y = segment, x = respondent_age)) + geom_boxplot(fill = "#1e9fc7") + 
+  labs( x= "Respondent Age", y = "", title = "Segment Age Distribution", subtitle = "Avoiders and Strivers skewed youngest") +
+    theme_minimal()
+```
+
+
+### Segmentation - Family Size
+```{r, echo = FALSE}
+demo %>% #slight distinction by family size **
+  ggplot(aes(y = segment, x = HH_COUNT)) + geom_boxplot(fill = "#1e9fc7") + 
+  labs( x= "Household Count", y = "", title = "Segment - Family Size", subtitle = "Are Optimizers forced to Optimize by workload or experience?") +
+    theme_minimal()
+```
+
+
+### Segmentation - Children
+```{r, echo = FALSE}
+demo %>% # No distinction by child count
+  ggplot(aes(y = segment, x = child_count)) + geom_boxplot(fill = "#1e9fc7") + 
+  labs( x= "Child Count", y = "", title = "Segment - Children", subtitle = "No distinction with child count") +
+    theme_minimal()
+```
+
+### Segmentation - Income
+
+```{r, echo = FALSE}
+
+demo %>%
+ ggplot( aes(x = per_cap)) +
+  geom_bar(mapping = aes(x = ..prop.., y = per_cap, group = 1), fill = "#1e9fc7")+
+  scale_x_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .1), minor_breaks = NULL) +
+  labs(title = "Segment Income Distributions", y = "", x = "Proportion") +
+facet_wrap(vars(segment), scales = "free")
+
+
+```
+
+
+### Segmentation - Female HOH Education
+```{r, echo = FALSE}
+demo %>% 
+  ggplot(aes(x = fem_edu_HOH, y = segment)) + 
+  geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
+  stat_smooth() +
+     labs(x = "Female HOH Education", y = "", title = "Segmentation and Education", subtitle = "No Clear Patterns in Female HOH Education") +
+   scale_fill_brewer(palette = "BuGn") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+### Segmentation - Male HOH Education
+```{r, echo = FALSE}
+demo %>% 
+  ggplot(aes(x = male_edu_HOH, y = segment)) + 
+  geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
+  stat_smooth() +
+     labs(x = "Male HOH Education", y = "", title = "Segmentation and Education", subtitle = "No Clear Patterns in Male HOH Education") +
+   scale_fill_brewer(palette = "BuGn") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r, echo = FALSE}
+demo %>% 
+  ggplot(aes(x = marital_code, y = segment)) + 
+  geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
+  stat_smooth() +
+     labs(x = "", y = "", title = "Segmentation and Marital Status", subtitle = "Patterns in Marriage ") +
+   scale_fill_brewer(palette = "BuGn") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+```{r, echo = FALSE}
+```
+
+## General Behavior of the Population - Laundry Event Frequency
+
+More insight may be gained by exploring which populations perform laundry at different rates and how laundry activity is concentrated on days where laundry is performed. It's notable here that there were numerous participants who engaged in multiple iterations of the study, almost half the participants 
+
+```{r, include = FALSE}
+#Inline Cleaning Function Check
+
+#It's noted that many respondents did not answer the "Event Count Today" Query accurately. It should have at least as many entries as the "Yes" responses in the "Laundry Event Today" query. 32662 events were counted by this method, while 45043 dairy entries exhibited "Yes" for at least a single laundry event. 
+
+table(diary$Event_Count_Today)
+events <- sum(diary$Event_Count_Today, na.rm = TRUE) #61921 Laundry Events
+table(diary$Laundry_Event_Today.) #48662 Days Laundry performed
+```
+
+
+
+```{r, echo = FALSE}
+
+#Establish Events Data Frame
+#combine all events in Event_Count_Today by Res_ID. Differentiates between event today? Yes No and allows for inclusion of multiple events per day. 
+eventcount <- diary %>%
+  group_by(Res_ID) %>%
+   tally(Event_Count_Today)
+
+#Create the laundry events demo table linkage earlier to accomodate the segmentation evaluation
+
+Laundry_Events <- diary %>% 
+  group_by(Res_ID) %>% 
+  count(Laundry_Event_Today.) %>% 
+  pivot_wider(names_from = Laundry_Event_Today., values_from = n)  #Takes output and spreads Y/N to new columns
+
+Laundry_Events[is.na(Laundry_Events)] = 0  #Replace NA values with 0
+Laundry_Events <- left_join(Laundry_Events, eventcount, by = 'Res_ID')  
+Laundry_Events <- Laundry_Events %>% mutate(Total_Days = No + Yes, Prop_Days = round((Yes / Total_Days), digits = 2 )) #Get summary columns on Laundry events
+Laundry_Events <- rename(Laundry_Events, Total_Events = n, Days_Yes = Yes, Days_No = No)
+Laundry_Events <- Laundry_Events %>% mutate(Events_Per_Day = Total_Events / Days_Yes)
+
+
+Events_Demo <- left_join(Laundry_Events, demo, by = c('Res_ID' = 'respondent_id'))  #Link Laundry Events table with Demographic data
+```
+
+## Laundry Use Stats - 
+Detail events and 
+
+```{r}
+
+
+
+
+
+```
+
+
+
+### Market Segmentation Laundry Use Rate. 
+
+Keeping in line with the segmentation, some more notable patterns emerge with behavior. This may mean that the respondent's answer is indicative of how the household manages laundry, ranging from a fun activity, to a neutral task to manage, to a drudgery.
+
+Behavior distinctions are evident with some of the segments, with Optimizers performing more often (0.5) and Avoiders less engaged (.38). 
+```{r, echo = FALSE}
+Events_Demo %>% 
+     ggplot( aes(x = Prop_Days, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
+  #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
+  labs( x= "Proportion of Days", y = "", title = "Segment Day Rate", subtitle = "Do the Segments perform Laundry more or less often?") +
+    theme_minimal()
+```
+
+### Market Segmentation - Loads per Day
+
+Fewer distinctions for concentration of loads in a given day. It's evident that Avoiders perform fewer loads on fewer days. 
+```{r, echo = FALSE}
+Events_Demo %>% 
+      ggplot( aes(x = Events_Per_Day, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
+  #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
+  labs( x= "Events per Day", y = "", title = "Segment Day Volume", subtitle = "Do the Segments perform multiples on laundry days?") +
+    theme_minimal()
+```
+
+
+
+
+### REMOVE THIS BLOCK
+```{r, echo = FALSE}
+#This is good code but the plot isn't as effective as the boxplots above. Saving for now but will look at more later. 
+Events_Demo %>% 
+  #filter(segment == "MELLOW METHODICALS") %>%
+  ggplot(aes(x = Events_Per_Day)) +
+  geom_histogram(aes(y = ..count../sum(..count..)),binwidth = .05, fill = "#1e9fc7") + 
+  scale_x_continuous(limits = c(.9, 3)) +
+  labs(title = "How Many Loads per Day?", subtitle = "Mean Loads per day for days when laundry is performed", x = "Proportion of Days Laundry is Done", y = "Households Reporting") + 
+  facet_wrap(vars(segment), scales = "free")
+# This isnt particulary descriptive and I'm having trouble normalizing it. Maybe try a boxplot.
+
+```
+
+
+## Age Cohorts - Is Age of Respondent vs. Head of Household? 
+
+We must ask if the survey respondent is generally representative of the Head of Household, or the "Laundry Authority" in the home.
+In all cases, the Interquartile Range, "IQR", or the 50% about the mean, of the respondents falls neatly within the Head of Household age classification. 
+For most homes in the study, it's safe to assume that the respondent is the Head of Household or their spouse. 
+
+```{r, echo = FALSE}
+#Safe to assume that respondent is usually the HOH?
+demo %>% 
+  #filter(age_HOH == "Under 25 Years") %>% 
+  select("respondent_age", "age_HOH") %>%
+  ggplot( aes(x = respondent_age, y = age_HOH)) + geom_boxplot(position = "dodge", fill = "lightblue") +
+  scale_x_continuous(breaks = seq(25, 90, by = 5)) +
+  labs( x= "Respondent Age", y = "Head of Household Age", title = "Respondent Age IQR Corresponds with HOH Age", subtitle = "Respondent age may be used as a proxy for HOH Age Cohort") +
+    theme_minimal()
+
+```
+
+```{r, echo = FALSE}
+#Evaluate Under 40's
+```
+### Under 40 Cohort
+
+
+
+## Age Cohort - Under 40
+```{r, echo = FALSE}
+under40s <- demo %>% 
+  filter(respondent_age < 41)
+
+under40s %>% 
+  group_by(per_cap) %>% 
+  summarize(n = n()) %>%  
+  mutate(freq = n / sum(n))
+```
+
+### Under 40 - Income Distribution
+```{r, echo = FALSE}
+under40s %>% 
+  ggplot( aes(x = per_cap)) +
+  geom_bar(mapping = aes(x = per_cap, y = ..prop.., group = 1))+
+  scale_y_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .025), minor_breaks = NULL) +
+  labs(title = "76% of Under 40's are Middle or Lower Income", y = "Proportion", x = "Income Classification")
+```
+
+### Under 40 - Marital Status
+
+```{r, echo = FALSE}
+#Plot the Marriage Proportions
+under40s %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = marital_code, y = ..prop.., group = 1)) +
+  scale_y_continuous(limits = c(0,.8),  breaks = seq(0, .8, by = .05), minor_breaks = NULL) +
+  labs(title = "60% of Under 40's are Married, 30% are Single", y = "Proportion", x = "Marital Status")
+```
+
+### Under 40 - Own/Rent Frequency
+
+```{r, echo = FALSE}
+#Own or Rent their Home
+under40s %>% 
+  group_by(own_rent) %>% 
+  summarize(n = n()) %>%  
+  mutate(freq = n / sum(n))
+```
+
+### Under 40s - Onw/Rent Plot
+
+```{r, echo = FALSE}
+#PLot Home Ownership Status
+under40s %>% 
+  ggplot() +
+  geom_bar(mapping = aes(x = own_rent, y = ..prop.., group = 1)) +
+  scale_y_continuous(limits = c(0,.5),  breaks = seq(0, .5, by = .05), minor_breaks = NULL) +
+  labs(title = "45% of Under 40s own their Home", subtitle = "Who are the 22% NAs?", y = "Proportion", x = "Home Ownership")
+```
+
+
+### Under 40s - Children
+
+```{r, echo = FALSE}
+#Child Status by Marital Status
+under40s %>% 
+  group_by(marital_code) %>%
+  summarize(Mean_Children = mean(child_count), SD_Children = sd(child_count))
+```
+
+### Laundry Events Histograms
+
+```{r, echo = FALSE}
+#Who is and isn't doing laundry?
+
+hist(Laundry_Events$Prop_Days )
+
+
+#ggplot(Laundry_Events, aes(x = prop.Y)) +
+ # geom_histogram(binwidth = .05, fill = "#1e9fc7") +
+  #labs(title = "How Often is Laundry Performed?", subtitle = "Proportion of days in the survey period where respondents performed laundry", x = "Proportion of Days Laundry is Done", y = "Households Reporting")
+```
+
+
+
+## Are families with kids doing more laundry? 
+ 
+```{r, echo = FALSE}
+events_children <- Events_Demo %>%
+  filter(child_count > 0)
+
+
+events_no_children <- Events_Demo %>%
+  filter(child_count == 0)
+```
+
+
+### Households w/ children
+
+```{r, echo = FALSE}
+events_children %>%
+  ggplot(aes(x = Prop_Days)) +
+  geom_histogram(binwidth = .05, fill = "#1e9fc7") +
+  labs(title = "Laundry Frequency - Households with Children", subtitle = "Households with Children", x = "Proportion of Days Laundry is Done", y = "Households Reporting") 
+
+```
+
+
+### No Children
+
+```{r, echo = FALSE}
+events_no_children %>%
+  ggplot(aes(x = Prop_Days)) +
+  geom_histogram(binwidth = .05, fill = "#1e9fc7") +
+  labs(title = "Laundry Frequency - Households without Children", subtitle = "Households with Children", x = "Proportion of Days Laundry is Done", y = "Households Reporting")
+
+
+#ggqqplot(events_no_children$prop.Y)
+
+#shapiro.test(events_no_children$prop.Y)
+```
+
+## Market Basket Analysis
+
+```{r}
+#Installing necessary packages and calling them to the library
+
+
+#install.packages("arules")
+#install.packages("arulesViz")
+#install.packages("dplyr")
+#install.packages("stringr")
+library(arules)
+library(arulesViz)
+library(dplyr)
+library(stringr)
+```
+
+
+```{r}
+#Loading the data cleaning script's output datasets into the local environment
+
+demographics <- read.csv("/Users/nickbeliveau/Desktop/demographics.csv")
+diary <- read.csv( "/Users/nickbeliveau/Desktop/diary.csv")
+demo_unique <- read.csv("/Users/nickbeliveau/Desktop/demo_unique.csv")
+```
+
+```{r}
+#Creating a subset of the diary data to only inlcude the columns which directly deal with the fabric care brands people use within the survey.
+#These brands, and their instances of use will form the data used for the market basket analysis. Helping to reconstruct their grocery store receipts.
+
+MB_data <- subset(diary, select = c('Detergent_Brand',
+'Detergent_Brand_Other',
+'Chlorine_Brand',
+'Colorsafe_Brand',
+'Colorsafe_Brand_Other',
+'Liquid_Softener_Brand',
+'Liquid_Softener_Brand_Other',
+'Sanitizer_Brand',
+'Sanitizer_Brand_Other',
+'Scent_Boost_Brand',
+'Scent_Boost_Brand_Other',
+'Softener_Sheets_Brand',
+'Softener_Sheets_Brand_Other',
+'Wrinkle_Protector_Brand',
+'Wrinkle_Protector_Brand_Other',
+'Dryer_Balls_Brand',
+'Dryer_Balls_Brand_Other',
+'Dry_Clean_Sheet_Brand',
+'Dry_Clean_Sheet_Brand_Other',
+'Fabric_Refresher_Brand',
+'Fabric_Refresher_Brand_Other',
+'Starch_Brand',
+'Starch_Brand_Other',
+'Anti_Static_Brand',
+'Anti_Static_Brand_Other'))
+```
+
+```{r}
+#Here we are replacing the observations "Other Brand (please specify)" with NA, which do not contain any useful information, only telling us to look at the "Other" columns for the respondents text entry answer. 
+#The need to replace these entries comes from the fact that the Market Basket analysis will treat these entries as though they are items to be included in the receipt reconstruction and to be used in formulating association rules, they should not.
+
+
+MB_data <- mutate_all(MB_data, funs(replace(., .=='Other Brand (please specify)', NA)))
+```
+
+```{r}
+#For a market basket analysis the data must be in a specific format. This format requires there be no column names (which will be accomplished later). However, because of the way the survey was constructed, if we remove the column names we will lose valuable information about how the brand relates to a specific product type. For instance if we remove the column names but leave the observations alone there would be no way to distinguish "Tide" from "Tide" despite one meaning the use of Tide liquid detergent and the other Tide fabric softener.
+
+# As a result we must append each observation within a column with the column name itself. So "Tide" and "Tide" become: "Tide_detergent" and "Tide_fabric_softener" That is what this line of code does. 
+
+MB_data[] <- lapply(seq_along(MB_data),\(i) paste(MB_data[[i]], names(MB_data)[i], sep = "_"))
+```
+
+```{r}
+#The previous code appends the column name to ALL observations including those that were NA to begin with (making them no longer NA).
+# For Example: "NA" becomes "NA_detergent:
+# This chunk finds observations which begin with "NA" and converts them to an actual NA value so they can be disregarded in the Market Basket Analysis
+
+
+MB_data <- MB_data %>%
+   mutate(across(c('Detergent_Brand',
+'Detergent_Brand_Other',
+'Chlorine_Brand',
+'Colorsafe_Brand',
+'Colorsafe_Brand_Other',
+'Liquid_Softener_Brand',
+'Liquid_Softener_Brand_Other',
+'Sanitizer_Brand',
+'Sanitizer_Brand_Other',
+'Scent_Boost_Brand',
+'Scent_Boost_Brand_Other',
+'Softener_Sheets_Brand',
+'Softener_Sheets_Brand_Other',
+'Wrinkle_Protector_Brand',
+'Wrinkle_Protector_Brand_Other',
+'Dryer_Balls_Brand',
+'Dryer_Balls_Brand_Other',
+'Dry_Clean_Sheet_Brand',
+'Dry_Clean_Sheet_Brand_Other',
+'Fabric_Refresher_Brand',
+'Fabric_Refresher_Brand_Other',
+'Starch_Brand',
+'Starch_Brand_Other',
+'Anti_Static_Brand',
+'Anti_Static_Brand_Other'),
+       ~ replace(.,  . %in% c('NA_Detergent_Brand',
+'NA_Detergent_Brand_Other',
+'NA_Chlorine_Brand',
+'NA_Colorsafe_Brand',
+'NA_Colorsafe_Brand_Other',
+'NA_Liquid_Softener_Brand',
+'NA_Liquid_Softener_Brand_Other',
+'NA_Sanitizer_Brand',
+'NA_Sanitizer_Brand_Other',
+'NA_Scent_Boost_Brand',
+'NA_Scent_Boost_Brand_Other',
+'NA_Softener_Sheets_Brand',
+'NA_Softener_Sheets_Brand_Other',
+'NA_Wrinkle_Protector_Brand',
+'NA_Wrinkle_Protector_Brand_Other',
+'NA_Dryer_Balls_Brand',
+'NA_Dryer_Balls_Brand_Other',
+'NA_Dry_Clean_Sheet_Brand',
+'NA_Dry_Clean_Sheet_Brand_Other',
+'NA_Fabric_Refresher_Brand',
+'NA_Fabric_Refresher_Brand_Other',
+'NA_Starch_Brand',
+'NA_Starch_Brand_Other',
+'NA_Anti_Static_Brand',
+'NA_Anti_Static_Brand_Other'), NA)))
+```
+
+
+```{r}
+#This code removes column names
+
+names(MB_data) <- NULL
+```
+
+#Write new data set as a csv so that it can be read back into R in specialized format as a 'transactions' list
+```{r}
+#The packages for the MB Analysis require the data to be read-in in a specific format, requiring us to first export the now cleaned and prepped data out of R Studio so it can be loaded in as a "transaction" file.
+
+
+write.csv(MB_data, "/Users/nickbeliveau/Desktop/MB_data.csv", row.names = FALSE)
+```
+
+```{r}
+#Reading in the cleaned data as a transaction file
+
+
+transactions1 <- read.transactions("/Users/nickbeliveau/Desktop/MB_data.csv", format = "basket", sep = ',', cols = NULL)
+```
+
+### Top 20 products by absolute numbers
+```{r}
+#Plotting the top 20 most common brands/product by aboslute numbers.
+
+itemFrequencyPlot(transactions1, topN=20, type="absolute",horiz=TRUE)
+```
+
+### Top 20 products by proportions
+```{r}
+#Plotting the top 20 most common brands/product by proportion numbers.
+
+
+
+itemFrequencyPlot(transactions1, topN=20, type="relative",horiz=TRUE)
+
+```
+
+### Check to see how many association rules the current settings have generated
+```{r}
+#Creating the association rules based on parameters.
+# to make rules stricter, increase supp and conf measures.
+# for longer association rules increase minlen
+
+rules <- apriori(transactions1, parameter = list(supp =0.0001, conf=0.8, minlen=3, maxlen=5), control = list(verbose=FALSE))
+rules
+```
+
+### Preview the first 10 association rules generated
+```{r}
+#view the first 10 rules
+
+inspect(rules[1:10])
+```
+
+### Top 10 association rules by Lift 
+```{r}
+#view the top 5 rules by lift
+
+
+inspect( sort(rules,by="lift", decreasing = TRUE)[1:10])
+```
+
+### Top 10 association rules by count
+```{r}
+#view the top 5 rules by count
+
+
+inspect( sort(rules,by="count", decreasing = TRUE)[1:5])
+```
+
+### HTML Widget allowing visual exploration of rules & their interconnected-ness
+```{r}
+#Creating an HTML Widget to visually explore the web of association rules and find interesting patterns!
+#The drop down menu can be used to locate specific products and the rules/groupings they belong to.
+#To zoom in, click on the graph and scroll up and down.
+
+
+plot(rules, method="graph", engine = "htmlwidget")
+```
+
+
