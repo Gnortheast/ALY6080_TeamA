@@ -64,7 +64,7 @@ colnames(demo)
 
 
 
-```{r}
+```{r, include = FALSE}
 # Re-lcassify per capita income categories to be more consistent. - Gabriella
 per_cap = sqldf("SELECT CASE WHEN income_HOH in ('Under $25k per year', '$25,000 to $49,999 per year') THEN 'Low Income'
 WHEN income_HOH in ('$50,000 to $69,999 per year', '$70,000 to $99,999 per year') THEN 'Middle Income'
@@ -85,10 +85,8 @@ rm(raw_demo, raw_diary, demo_names, diary_names, per_cap)
 
 
 
-#Intermediate Cleaning Steps
 
-
-```{r}
+```{r, include = FALSE}
 # Order age_HOH logically
 demo["age_HOH"][demo["age_HOH"] == "Under 25 Years"] <- "(1) Under 25"
 demo["age_HOH"][demo["age_HOH"] == "25-29 Years"] <- "(2) 25-29"
@@ -115,7 +113,7 @@ demo$respondent_age <- as.numeric(demo$respondent_age)
 ```
 
 
-```{r}
+```{r, include = FALSE}
 
 #replace segment typo
 demo["segment"][demo["segment"] == "PASSSIONATE OPTIMIZER"]  <-  "PASSIONATE OPTIMIZERS"
@@ -123,17 +121,12 @@ table(demo$segment)
 
 ```
 
-```{r}
-diary
-
-
+```{r, include = FALSE}
 # Check for conditions where a laundry event was recorded but not entered in "event count today" and then update the event count to 1 to allow subsequent tally of individual loads. 
 diary <- within(diary, {
     f <- Laundry_Event_Today. == 'Yes' & is.na(Event_Count_Today)
     Event_Count_Today[f] <- 1
     }) 
-
-
 ```
 
 
@@ -141,7 +134,7 @@ diary <- within(diary, {
 
 
 
-```{r}
+```{r, include=FALSE}
 #replacee other adults respondent age over 80 and save as numeric data
 for (i in 35:43){  #For all adults, recode "Over 80" as 89
   demo[i][demo[i] == "Over 80"] <- "89" 
@@ -193,15 +186,13 @@ demo$child8_age <- as.numeric(str_extract(demo$child8_age, "\\d+"))
 demo$child9_age <- as.numeric(str_extract(demo$child9_age, "\\d+"))
 demo$child10_age <- as.numeric(str_extract(demo$child10_age, "\\d+"))
 
-
 mean(demo$child1_age, na.rm = TRUE)
-
 
 demo[, 153:162] #confirm column counts for child ages
 ```
 
 
-```{r}
+```{r, include = FALSE}
 #Explore Retailer "Others"
 
 #table(diary$Grocery_Other)
@@ -226,21 +217,24 @@ diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "
 ```
 
 
-
-CLean out duplicate entries in demo
-```{r}
+```{r, include = FALSE}
+#CLean out duplicate entries in demo
 demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
 
 ```
 
 
 
-#The code below creates a subset of the data for those that did laundry 
-and joins the demo data to the diary data based on the last demo entry. 
+```{r, include = FALSE}
 
-A csv is created for the customer view dashboards (Gabriella & Cam)
+#The code below creates a subset of the data for those that did laundry and joins the demo data to the diary data based on the last demo entry. 
+#A csv is created for the customer view dashboards (Gabriella & Cam)
 
-```{r}
+```
+
+
+
+```{r, include=FALSE}
 #need to have same variable name for merge together, add column that matches demo respondent id
 names(diary)[1]<- "respondent_id"
 
@@ -278,7 +272,7 @@ where demo1.rownum=1")
 
 
 
-```{r, include=false}
+```{r, include = FALSE}
 #write combined files to new CSVs
 write.csv(demo, "demographics.csv", row.names = FALSE)
 write.csv(diary, "diary.csv", row.names = FALSE)
