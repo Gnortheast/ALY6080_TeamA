@@ -238,7 +238,7 @@ demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
 #The code below creates a subset of the data for those that did laundry 
 and joins the demo data to the diary data based on the last demo entry. 
 
-A csv is created for the customer view dashboard (Gabriella)
+A csv is created for the customer view dashboards (Gabriella & Cam)
 
 ```{r}
 #need to have same variable name for merge together, add column that matches demo respondent id
@@ -248,20 +248,26 @@ names(diary)[1]<- "respondent_id"
 #mutiple ids per laundry event for # of days laundry was done
 diary_subset = diary[diary$Laundry_Event_Today. %in% c("Yes"),] #number of rows decreases from 93,705 to 45,043 for the number of times laundry was done
 
+
 demo_diary = sqldf("SELECT ds.*
 ,demo1.*
 FROM diary_subset ds
 
-inner join 
+left outer join
 
-(SELECT respondent_id
+(SELECT respondent_id as R2
 ,Segment
+,Income_HOH
+,age_HOH
+,ethnicity_HOH
+,race_HOH
 ,row_number() OVER(PARTITION BY respondent_id order by diary_start_date desc) as rownum
 from demo AS D
-) as demo1
-on demo1.respondent_id=ds.respondent_id
 
-where rownum=1")
+) as demo1
+on demo1.r2=ds.respondent_id
+
+where demo1.rownum=1")
 
 
 ```
