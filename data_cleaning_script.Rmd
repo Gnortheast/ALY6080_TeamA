@@ -280,5 +280,8 @@ write.csv(demo_unique, "demo_unique.csv", row.names = FALSE)
 write.csv(demo_diary, "demo_diarysubset.csv", row.names=FALSE)
 ```
 
+The output 'demo_diary' above can act as an automated data source to be read into the
+interactive story dashboards provided. As VIA continues to analyze future data they can read in updated excel file data
+to be cleaned with the cleaning script, an updated files are created. The csv file used will refresh provided dashboards, which can be published to a server for enhanced visualization, reporting, and/or extraction of data as needed. 
 
 
