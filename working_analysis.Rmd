@@ -312,7 +312,7 @@ rm(list=ls())
 ```{r, include = FALSE}
 #Load Data
 
-demo_original <- read.csv("demographics.csv")
+#demo_original <- read.csv("demographics.csv")  #Commenting out, I don't think we use this anymore. 
 diary <- read.csv("diary.csv")
 demo <- read.csv("demo_unique.csv")
 ```
@@ -359,7 +359,7 @@ demo %>%
 
 ## Segmentation Size Breakdown
 
-As segmentation was a new feature with recent data, NA's are present and represent 37% of the entries. The NA's were kept as a reminder that the segmentation data is only partially representative of the entire sample, and to maintain size context when evaluating differences between segments. 
+As segmentation was a new feature with recent data, NA's, or uncategoried respondents, are present and represent 37% of the entries. The NA's were kept as a reminder that the segmentation data is only partially representative of the entire sample, and to maintain size context when evaluating differences between segments. 
 
 For example, "Avoident Apathetics" show some distinctions in laundry use rate behavior; which might allow more useful inferences, but Avoiders are 1.4% of the whole population.
 
@@ -374,7 +374,7 @@ segment %>%
   ggplot(aes(x = reorder(segment, Count), y = Count)) +
   geom_bar(stat = 'identity', fill = "#1e9fc7") +
   coord_flip() +
-  labs( x= "", y = "Count of Respondents", title = "Segment Population", subtitle = "Mellow Methodicals Dominate") +
+  labs( x= "", y = "Count of Respondents", title = "Segment Population", subtitle = "NAs and Mellow Methodicals Dominate") +
    theme_minimal() 
  # theme(axis.text.x = element_text(angle = 90))
 
@@ -757,12 +757,17 @@ mean(events_no_children$Prop_Days)
 #shapiro.test(events_no_children$prop.Y)
 ```
 
+```{r}
+#Remove items for next section
+rm(events_children, events_no_children)
+
+```
 
 
 
 # Market Basket Analysis
 
-```{r}
+```{r, include = FALSE}
 #Installing necessary packages and calling them to the library
 
 
@@ -886,21 +891,21 @@ MB_data <- MB_data %>%
 ```
 
 
-```{r}
+```{r, echo = FALSE}
 #This code removes column names
 
 names(MB_data) <- NULL
 ```
 
 #Write new data set as a csv so that it can be read back into R in specialized format as a 'transactions' list
-```{r}
+```{r, echo = FALSE}
 #The packages for the MB Analysis require the data to be read-in in a specific format, requiring us to first export the now cleaned and prepped data out of R Studio so it can be loaded in as a "transaction" file.
 
 
 write.csv(MB_data, "MB_data.csv", row.names = FALSE)
 ```
 
-```{r}
+```{r, echo = FALSE}
 #Reading in the cleaned data as a transaction file
 
 
@@ -908,14 +913,14 @@ transactions1 <- read.transactions("MB_data.csv", format = "basket", sep = ',', 
 ```
 
 ### Top 20 products by absolute numbers
-```{r}
+```{r, echo = FALSE}
 #Plotting the top 20 most common brands/product by aboslute numbers.
 
 itemFrequencyPlot(transactions1, topN=20, type="absolute",horiz=TRUE)
 ```
 
 ### Top 20 products by proportions
-```{r}
+```{r, echo = FALSE}
 #Plotting the top 20 most common brands/product by proportion numbers.
 
 
@@ -925,7 +930,7 @@ itemFrequencyPlot(transactions1, topN=20, type="relative",horiz=TRUE)
 ```
 
 ### Check to see how many association rules the current settings have generated
-```{r}
+```{r, echo = FALSE}
 #Creating the association rules based on parameters.
 # to make rules stricter, increase supp and conf measures.
 # for longer association rules increase minlen
@@ -935,14 +940,14 @@ rules
 ```
 
 ### Preview the first 10 association rules generated
-```{r}
+```{r, echo = FALSE}
 #view the first 10 rules
 
 inspect(rules[1:10])
 ```
 
 ### Top 10 association rules by Lift 
-```{r}
+```{r, echo = FALSE}
 #view the top 5 rules by lift
 
 
@@ -950,7 +955,7 @@ inspect( sort(rules,by="lift", decreasing = TRUE)[1:10])
 ```
 
 ### Top 10 association rules by count
-```{r}
+```{r, echo = FALSE}
 #view the top 5 rules by count
 
 
@@ -958,7 +963,7 @@ inspect( sort(rules,by="count", decreasing = TRUE)[1:5])
 ```
 
 ### HTML Widget allowing visual exploration of rules & their interconnected-ness
-```{r}
+```{r, echo = FALSE}
 #Creating an HTML Widget to visually explore the web of association rules and find interesting patterns!
 #The drop down menu can be used to locate specific products and the rules/groupings they belong to.
 #To zoom in, click on the graph and scroll up and down.
@@ -966,5 +971,184 @@ inspect( sort(rules,by="count", decreasing = TRUE)[1:5])
 
 plot(rules, method="graph", engine = "htmlwidget")
 ```
+
+```{r, include = FALSE}
+rm(rules, MB_Data)#Remove items to prepare for the next section
+
+
+```
+
+
+
+# Sentiment Evaluations
+
+Simple keyword matching was performed to capture counts and sample text entered related to respondent frustrations. Distinct categories were selected based on a sampling of some of the comments reviewed. Categories include frustrations related to People, Chores, Soils, and those without frustrations. 
+
+Simple Keyword selection is a crude analysis tool. Counting entries where keywords exists will not capture context, sarcasm, mis-spellings, double-negatives or other grammatical idiosyncrasies. 
+
+A random sample from each category is presented to provide the "flavor" of each complaint. Note the re-execution of the script will result in a new random sample. 
+
+```{r, include = FALSE}
+# Prepare dataset for text analysis
+#Subset Frustrations Data
+frustrations <- diary %>% #Subset the frustrations Entry
+  select('respondent_id', 'Frustrations')
+ 
+#Filter empties
+frustrations <- filter(frustrations, Frustrations != "") # Filter out empty values
+
+#Subset Tips data
+tips <- diary %>% #Subset the frustrations Entry
+  select('respondent_id', 'Tips_Tricks')
+
+#Filter out empties and save into Tips
+tips <- filter(tips, Tips_Tricks != "")
+
+#Join the filtered data and save to a new object
+
+text <- frustrations %>% 
+  select_all() %>%
+  full_join(tips, by = "respondent_id")
+
+write.csv(text, "text.csv", row.names = FALSE)
+
+text <- read.csv("text.csv") #Load in the data
+```
+
+
+```{r, include = FALSE}
+rm(tips, frustrations) #Remove redundancies
+```
+
+
+```{r, include = FALSE}
+
+
+frustrations <- as.vector(unique(text$Frustrations)) #Get unique entries from frustrations list, 3216 items long
+tips <- as.vector(unique(text$Tips_Tricks)) #unique entries from the tips list, 1770 items long
+
+households <- length(unique(text$respondent_id))  #6685 Households reporting
+
+```
+
+
+## Frustrations Related to Other People 
+
+219 Comments related to other people, selected to capture any entries with the following keywords: 
+
+"husband", "son", "wife", "daughter", "mother", "father", "sister", "brother", "spouse", "sibling", "kid", "kids", "shar.", "people"
+
+```{r, echo=FALSE}
+#Setup a regular expression to detect sentence that mention family members, sharing, or other people
+family <- c("husband", "son", "wife", "daughter", "mother", "father", "sister", "brother", "spouse", "sibling", "kid", "kids", "shar.", "people")
+family_match <- str_c(family, collapse = "|")
+
+people_frustrations <- str_subset(frustrations, family_match) 
+
+```
+
+
+## Random Sample - 25 People Frustrations
+
+
+```{r, include = FALSE}
+sample(people_frustrations, 25)
+```
+
+
+
+## Frustrations Related to Specific Tasks 
+
+1394 Comments related to task/chores, too many to print below. 745 (53%) include complaints including the word "time". 
+Keywords or this selection are: 
+"pockets", "residue", "time",  "long", "bend.", "shrink", "wrinkle", "lint", "chore", "sort", "hang", "rewash", "broken", "static"
+
+```{r, include  = FALSE}
+#Setup a regular expression to detect sentence that mention details specific to the tasks of doing laundry
+tasks <- c("pockets", "residue", "time",  "long", "bend.", "shrink", "wrinkle", "lint", "chore", "sort", "hang", "rewash", "broken", "static")
+tasks_match <- str_c(tasks, collapse = "|")
+
+task_frustration <- str_subset(frustrations, tasks_match) 
+
+length(task_frustration)
+
+
+length(str_subset(frustrations, "time"))
+
+```
+## Random Sample - Task Frustrations 
+
+```{r, include = FALSE}
+sample(task_frustration, 25)
+
+```
+
+## Frustrations - Specific Soils
+
+308 Frustrations Linked to Soils Keywords
+"dirty", "smell", "dingy", "oil", "grease", "dirt", "blood", "grass"
+
+```{r, include = FALSE}
+#Setup a regular expression to detect sentence that mention details specific to the laudnry soils
+soils <- c("dirty", "smell", "dingy", "oil", "grease", "dirt", "blood", "grass")
+soils_match <- str_c(soils, collapse = "|")
+
+soils_frustration <- str_subset(frustrations, soils_match) 
+
+soils_frustration 
+```
+## Random Sample - Soils Frustrations
+
+```{r}
+sample(soils_frustration, 25)
+```
+
+## Economic Frustration
+
+
+```{r}
+#Economic considerations
+
+cost <- c("cost", "price", "expensive", "money", "coin.", "quarter.", "inflation", "bills", "dollar") 
+cost_match <- str_c(cost, collapse = "|")
+
+cost_frustration <- str_subset(frustrations, cost_match) 
+
+length(cost_frustration)
+
+
+
+```
+
+## Random Sample - Economic Frustrations
+
+```{r}
+sample(cost_frustration, 25)
+```
+
+
+## No Frustration - Laundry Enthusiasm
+
+288 Comments including keywords like: "like", "love", "enjoy", "fun". 
+Numerous negatives captured here. See the sampling below. 
+
+
+```{r, include = FALSE}
+#Who likes doing laundry?
+likes <- c("like", "love", "enjoy", "^fun$", "relax") #the string "like" is too ambiguous to use siomple here
+likes_match <- str_c(likes, collapse = "|")
+
+likes_frustration <- str_subset(frustrations, likes_match) 
+
+length(likes_frustration) 
+
+```
+## Random Sample - Laundry Enthusiasm
+
+```{r, include = FALSE}
+sample(likes_frustration, 25)
+```
+
+
 
 
