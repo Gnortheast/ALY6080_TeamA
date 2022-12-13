@@ -16,39 +16,23 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, include = FALSE}
-#Install/Load Packages
-#install.packages("tidyverse")
-#install.packages("readxl")
-#install.packages("sqldf")
-#install.packages("ggpubr")
-#install.packages("arules")
-#install.packages("arulesViz")
-#install.packages("dplyr")
-#install.packages("stringr")
+```{r install-packages, include = FALSE}
+
+library(pacman)
+pacman::p_load(tidyverse, readxl, sqldf, ggpubr, arules, arulesViz, dplyr, stringr)
+
 
 ```
 
 
-```{r, include = FALSE}
+```{r clear-objects-prior-to-cleaning, include = FALSE}
 rm(list=ls()) #Remove all objects in environment
 
-library(sqldf)
-library(tidyverse)
-library(tibble)
-library(readxl)
-library(dplyr)
-library(ggpubr)
-library(arules)
-library(arulesViz)
-library(dplyr)
-library(stringr)
 
-#Programming Note: Opportunity to refresh/load all packages to avoid commenting out install commands?
 ```
 
 
-```{r, include=FALSE, warning = FALSE}
+```{r load-raw-data, include=FALSE, warning = FALSE}
 #Load data into environment. 
 #Requires manually renaming raw diary files to the indicated "Raw_diary" listed below. Files must be read from the same directory as this code. 
 #Ensure Raw .csv files should be encoded as UTF-8, this can be done via opening the .csv in Notepad>Save As> ... Select UTF-8 encoding and overwrite file.
@@ -69,7 +53,7 @@ raw_diary <- read_xlsx("Laundry Room Diary Datafile 52 wks ending 10.16.22.xlsx"
 ```
 
 
-```{r, include=FALSE}
+```{r rewrite-column-names, include=FALSE}
 #Rename Diary+Demo Files According to new  name set
 
 diary <- raw_diary #simplify name
@@ -85,7 +69,7 @@ colnames(demo)
 
 
 
-```{r, include = FALSE}
+```{r re-classify-income-categories, include = FALSE}
 # Re-lcassify per capita income categories to be more consistent. - Gabriella
 per_cap = sqldf("SELECT CASE WHEN income_HOH in ('Under $25k per year', '$25,000 to $49,999 per year') THEN 'Low Income'
 WHEN income_HOH in ('$50,000 to $69,999 per year', '$70,000 to $99,999 per year') THEN 'Middle Income'
@@ -96,13 +80,13 @@ FROM demo")
 demo$per_cap = per_cap$per_cap2
 ```
 
-```{r, include=FALSE}
+```{r remove-temporary-objects, include=FALSE}
 #remove raw d"f's from environment
 rm(raw_demo, raw_diary, demo_names, diary_names, per_cap)
 ```
 
 
-```{r, include = FALSE}
+```{r recode-age-data, include = FALSE}
 # Order age_HOH logically
 demo["age_HOH"][demo["age_HOH"] == "Under 25 Years"] <- "(1) Under 25"
 demo["age_HOH"][demo["age_HOH"] == "25-29 Years"] <- "(2) 25-29"
@@ -119,7 +103,7 @@ table(demo$age_HOH)
 
 ```
 
-```{r, include = FALSE}
+```{r clean-age-data, include = FALSE}
 #replace demo respondent age
 demo["respondent_age"][demo["respondent_age"] == "Over 80"]  <-  "89"
 demo$respondent_age <- as.numeric(demo$respondent_age)
@@ -129,7 +113,7 @@ demo$respondent_age <- as.numeric(demo$respondent_age)
 ```
 
 
-```{r, include = FALSE}
+```{r repair-spelling, include = FALSE}
 
 #replace segment typo
 demo["segment"][demo["segment"] == "PASSSIONATE OPTIMIZER"]  <-  "PASSIONATE OPTIMIZERS"
@@ -137,7 +121,7 @@ table(demo$segment)
 
 ```
 
-```{r, include = FALSE}
+```{r update-single-laundry-events, include = FALSE}
 # Check for conditions where a laundry event was recorded but not entered in "event count today" and then update the event count to 1 to allow subsequent tally of individual loads. 
 diary <- within(diary, {
     f <- Laundry_Event_Today. == 'Yes' & is.na(Event_Count_Today)
@@ -150,7 +134,7 @@ diary <- within(diary, {
 
 
 
-```{r, include=FALSE}
+```{r recode-over-80s, include=FALSE}
 #replacee other adults respondent age over 80 and save as numeric data
 for (i in 35:43){  #For all adults, recode "Over 80" as 89
   demo[i][demo[i] == "Over 80"] <- "89" 
@@ -164,7 +148,7 @@ rm(i)  #remove i variable after completed loop
 ```
 
 
-```{r, include=FALSE}
+```{r recode--0-child-counts, include=FALSE}
 demo["child_count"][demo["child_count"] == "None"]  <-  "0"
 demo$child_count <- as.numeric(demo$child_count)
 
@@ -172,7 +156,7 @@ class(demo$child_count) #Check for accuracty and comment out
 #hist(demo$child_count)
 ```
 
-```{r, include=FALSE}
+```{r recode-child<0, include=FALSE}
 #Experiment with methods of selecting numerics from strings
 
 table(demo$child1_age)
@@ -188,7 +172,7 @@ sum(str_count(demo$child1_age, "Less than"), na.rm = TRUE)
 
 ```
 
-```{r, include=FALSE}
+```{r recode-child-ages, include=FALSE}
 #Take all children's ages, written in strings, and rewrite as numeric for analysis. Tried to do this in a loop but couldn;'t get the indexing right. Children under 1 will be counted as 1yo's. 
 
 demo$child1_age <- as.numeric(str_extract(demo$child1_age, "\\d+"))
@@ -213,9 +197,9 @@ demo[, 153:162] #confirm column counts for child ages
 
 #table(diary$Grocery_Other)
 
-diary$Grocery_Other <-  str_to_lower(diary$Grocery_Other) #move all to lowercase to aid regexes
+#$Grocery_Other <-  str_to_lower(diary$Grocery_Other) #move all to lowercase to aid regexes
 
-diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "acme"), "acme")
+#diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "acme"), "acme")
 
 
 
@@ -233,7 +217,7 @@ diary$Grocery_Other <- str_replace(diary$Grocery_Other, c("acme.+", "acme\\s", "
 ```
 
 
-```{r, include = FALSE}
+```{r select-unique-demographics, include = FALSE}
 #CLean out duplicate entries in demo
 demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
 
@@ -250,7 +234,7 @@ demo_unique <- distinct(demo, respondent_id,.keep_all = TRUE)
 
 
 
-```{r, include=FALSE}
+```{r prepare-sql-selection-chunk, include=FALSE}
 #need to have same variable name for merge together, add column that matches demo respondent id
 names(diary)[1]<- "respondent_id"
 
@@ -282,7 +266,7 @@ where demo1.rownum=1")
 
 ```
 
-```{r, include = FALSE}
+```{r write-cleaned-files, include = FALSE}
 #write combined files to new CSVs
 write.csv(demo, "demographics.csv", row.names = FALSE)
 write.csv(diary, "diary.csv", row.names = FALSE)
@@ -301,7 +285,7 @@ to be cleaned with the cleaning script, and an updated cvs file is created. The 
 
 
 
-```{r, include = FALSE}
+```{r clear-envrionment-for-analysis-block, include = FALSE}
 
 #Start Analysis block - 
 #Remove all items from global environment
@@ -309,7 +293,7 @@ rm(list=ls())
 
 ```
 
-```{r, include = FALSE}
+```{r load-clean-data, include = FALSE}
 #Load Data
 
 #demo_original <- read.csv("demographics.csv")  #Commenting out, I don't think we use this anymore. 
@@ -335,7 +319,7 @@ While demographic distinctions weren't strong between segment categories, there 
 
 
 
-```{r, echo = FALSE}
+```{r prepare-segmentation-data, echo = FALSE}
 segment <- demo %>% 
   group_by(segment) %>%
     summarize(Count = n()) %>%
@@ -347,7 +331,7 @@ segment <- segment %>% arrange(Count )
 ```
 
 
-```{r, echo = FALSE, include = FALSE}
+```{r check-engagement-time, echo = FALSE, include = FALSE}
 #Evaluate engagement time
 demo %>% 
   filter(is.na(segment)) %>%
@@ -365,7 +349,7 @@ For example, "Avoident Apathetics" show some distinctions in laundry use rate be
 
 Since the segmentation was a new feature of the data, it serves as an example of the challenges in data collection and structure. Consultancy between analyst, customer, ad survey taking may yeild stronger results in the future. 
 
-```{r, echo = FALSE}
+```{r plot-segment-1, echo = FALSE}
 segment
 
 segment %>% 
@@ -382,7 +366,7 @@ segment %>%
 
 
 
-```{r, include = FALSE}
+```{r filter-segment, include = FALSE}
 
 
 segment_filtered <- drop_na(segment) 
@@ -408,7 +392,7 @@ Age, Family Size and Income may be predictive of the Segments - plots are includ
 
 ### Segmentation - Age
 Notable youth skew in Avoiders and Strivers; laundry optimization may be a skill developed with experience and by necessity. 
-```{r, echo = FALSE}
+```{r plot-segment-2, echo = FALSE}
 demo %>% #Possible distnction by age
   ggplot(aes(y = segment, x = respondent_age)) + geom_boxplot(fill = "#1e9fc7") + 
   labs( x= "Respondent Age", y = "", title = "Segment Age Distribution", subtitle = "Avoiders and Strivers skewed youngest") +
@@ -418,7 +402,7 @@ demo %>% #Possible distnction by age
 
 ### Segmentation - Family Size
 Slightly higher mean family sizes for Optimizers and Strivers; which, may again indicate experience, necessity, and confidence level of the respondent. 
-```{r, echo = FALSE}
+```{r plot-segment-3, echo = FALSE}
 demo %>% #slight distinction by family size **
   ggplot(aes(y = segment, x = HH_COUNT)) + geom_boxplot(fill = "#1e9fc7") + 
   labs( x= "Household Count", y = "", title = "Segment - Family Size", subtitle = "Are Optimizers forced to Optimize by workload or experience?") +
@@ -427,7 +411,7 @@ demo %>% #slight distinction by family size **
 
 
 
-```{r, include = FALSE}
+```{r plot-segment-child, include = FALSE}
 demo %>% # No distinction by child count
   ggplot(aes(y = segment, x = child_count)) + geom_boxplot(fill = "#1e9fc7") + 
   labs( x= "Child Count", y = "", title = "Segment - Children", subtitle = "No distinction with child count") +
@@ -438,7 +422,7 @@ demo %>% # No distinction by child count
 
 Strivers are more likely to be low income, Eco minded skew more affluent. Other categories don't appear proportionally different from the NA's.
 
-```{r, echo = FALSE}
+```{r plot-segment-income, echo = FALSE, warning=FALSE}
 
 demo %>%
  ggplot( aes(x = per_cap)) +
@@ -451,7 +435,7 @@ facet_wrap(vars(segment), scales = "free")
 ```
 
 
-```{r, include = FALSE}
+```{r plot-fHOH-educaction, include = FALSE}
 demo %>% 
   ggplot(aes(x = fem_edu_HOH, y = segment)) + 
   geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
@@ -462,7 +446,7 @@ demo %>%
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-```{r, include = FALSE}
+```{r plot-mHOH-education, include = FALSE}
 demo %>% 
   ggplot(aes(x = male_edu_HOH, y = segment)) + 
   geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
@@ -474,7 +458,7 @@ demo %>%
 ```
 
 
-```{r, include = FALSE}
+```{r plot-marital, include = FALSE}
 demo %>% 
   ggplot(aes(x = marital_code, y = segment)) + 
   geom_jitter(alpha = 0.3, color = "#1e9fc7") +  
@@ -494,7 +478,7 @@ demo %>%
 More insight may be gained by exploring which populations perform laundry at different rates and how laundry activity is concentrated on days where laundry is performed. It's notable here that there were numerous participants who engaged in multiple iterations of the study, almost half the participants participated for more than one week period. 
 
 
-```{r, include = FALSE}
+```{r tabulate-frequency, include = FALSE}
 #Inline Cleaning Function Check
 
 #It's noted that many respondents did not answer the "Event Count Today" Query accurately. It should have at least as many entries as the "Yes" responses in the "Laundry Event Today" query. 32662 events were counted by this method, while 45043 dairy entries exhibited "Yes" for at least a single laundry event. 
@@ -508,13 +492,13 @@ table(diary$Laundry_Event_Today.) #48662 Days Laundry performed
 
 2 events among the entire dataset had 9 loads of laundry.
 
-```{r}
+```{r table-event-counts}
 table(diary$Event_Count_Today)
 
 ```
 
 
-```{r, echo = FALSE}
+```{r establish-events-df, echo = FALSE}
 
 #Establish Events Data Frame
 #combine all events in Event_Count_Today by Res_ID. Differentiates between event today? Yes No and allows for inclusion of multiple events per day. 
@@ -557,7 +541,7 @@ Detail events and
 Keeping in line with the segmentation, some more notable patterns emerge with behavior. This may mean that the respondent's answer is indicative of how the household manages laundry, ranging from a fun activity, to a neutral task to manage, to a drudgery.
 
 Behavior distinctions are evident with some of the segments, with Optimizers performing more often (0.5) and Avoiders less engaged (.38). 
-```{r, echo = FALSE}
+```{r segmnet-day-rate, echo = FALSE}
 Events_Demo %>% 
      ggplot( aes(x = Prop_Days, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
   #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
@@ -568,7 +552,7 @@ Events_Demo %>%
 ### Market Segmentation - Loads per Day
 
 Fewer distinctions for concentration of loads in a given day. It's evident that Avoiders perform fewer loads on fewer days. 
-```{r, echo = FALSE}
+```{r segment-day-volume, echo = FALSE}
 Events_Demo %>% 
       ggplot( aes(x = Events_Per_Day, y = segment)) + geom_boxplot(position = "dodge", fill = "#1e9fc7") +
   #scale_x_continuous(breaks = seq(25, 90, by = 5)) +
@@ -600,7 +584,7 @@ In all cases, the Interquartile Range, "IQR", or the 50% about the mean, of the 
 
 For most homes in the study, it's safe to assume that the respondent is the Head of Household or their spouse. 
 
-```{r, echo = FALSE}
+```{r respondent-is-HOH, echo = FALSE}
 #Safe to assume that respondent is usually the HOH?
 demo %>% 
   #filter(age_HOH == "Under 25 Years") %>% 
@@ -620,7 +604,7 @@ demo %>%
 There was interest expressed in the laundry behavior of younger generations, selected here as respondents under 40 years old. 
 
 ## Age Cohort - Under 40
-```{r, echo = FALSE}
+```{r write-under-40s, echo = FALSE}
 under40s <- demo %>% 
   filter(respondent_age < 41)
 
@@ -631,7 +615,7 @@ under40s %>%
 ```
 
 ### Under 40 - Income Distribution
-```{r, echo = FALSE}
+```{r under-40s-income, echo = FALSE}
 under40s %>% 
   ggplot( aes(x = per_cap)) +
   geom_bar(mapping = aes(x = per_cap, y = ..prop.., group = 1, ), fill ="#1e9fc7") +
@@ -641,7 +625,7 @@ under40s %>%
 
 ### Under 40 - Marital Status
 
-```{r, echo = FALSE}
+```{r under-40s-marriage, echo = FALSE}
 #Plot the Marriage Proportions
 under40s %>% 
   ggplot() +
@@ -654,7 +638,7 @@ under40s %>%
 
 A respondent owning or renting their home may indicate where the respondent is doing their laundry, either at home in an owned laundry room, in a shared laundry facility for a large apartment building, or at a laundromat. NA's are still significant, 20% of the data. 43% own and 32% lease, while almost 4% report some other arrangement. 
 
-```{r, echo = FALSE}
+```{r under-40s-own-rent, echo = FALSE}
 #Own or Rent their Home
 under40s %>% 
   group_by(own_rent) %>% 
@@ -664,7 +648,7 @@ under40s %>%
 
 ### Under 40s - Own/Rent Plot
 
-```{r, echo = FALSE}
+```{r plot-under-40s-own-rent, echo = FALSE}
 #PLot Home Ownership Status
 under40s %>% 
   ggplot() +
@@ -676,7 +660,7 @@ under40s %>%
 
 ### Under 40s - Children
 
-```{r, echo = FALSE}
+```{r under40s-children, echo = FALSE}
 #Child Status by Marital Status
 under40s %>% 
   group_by(marital_code) %>%
@@ -689,7 +673,7 @@ under40s %>%
 
 For example, a laundry frequency of 0.25 indicates that a household performed laundry for 1 in 4 of the days they reported, but does not indicate how many loads they did on a given day. 
 
-```{r, include  = FALSE}
+```{r laundry-events-1, include  = FALSE}
 #Who is and isn't doing laundry?
 
 hist(Laundry_Events$Prop_Days )
@@ -705,7 +689,7 @@ mean(Laundry_Events$Prop_Days)
 ### Laundry Frequency - All Households
 
 In general, for the survey, laundry activity is performed on 46% of days. 
-```{r}
+```{r, freq-plot-all, echo = FALSE}
 Laundry_Events %>%
   ggplot(aes(x = Prop_Days)) +
   geom_histogram(binwidth = .05, fill = "#1e9fc7") +
@@ -715,7 +699,7 @@ Laundry_Events %>%
 
 
 
-```{r, echo = FALSE}
+```{r children-households, echo = FALSE}
 events_children <- Events_Demo %>%
   filter(child_count > 0)
 
@@ -728,7 +712,7 @@ events_no_children <- Events_Demo %>%
 ### Laundry Frequency - Households with Children
 Homes with children are doing laundry more often than the population, more than half the days.
 
-```{r, echo = FALSE}
+```{r plot-children-freq, echo = FALSE}
 events_children %>%
   ggplot(aes(x = Prop_Days)) +
   geom_histogram(binwidth = .05, fill = "#1e9fc7") +
@@ -744,7 +728,7 @@ mean(events_children$Prop_Days)
 
 Homes without children are doing laundry less often than all households, or 41.6% of days. 
 
-```{r, echo = FALSE}
+```{r plot-no-children-freq, echo = FALSE}
 events_no_children %>%
   ggplot(aes(x = Prop_Days)) +
   geom_histogram(binwidth = .05, fill = "#1e9fc7") +
@@ -757,7 +741,7 @@ mean(events_no_children$Prop_Days)
 #shapiro.test(events_no_children$prop.Y)
 ```
 
-```{r}
+```{r remove-objects-for-MB, include = FALSE}
 #Remove items for next section
 rm(events_children, events_no_children)
 
@@ -767,7 +751,7 @@ rm(events_children, events_no_children)
 
 # Market Basket Analysis
 
-```{r, include = FALSE}
+```{r start-MB, include = FALSE}
 #Installing necessary packages and calling them to the library
 
 
@@ -784,7 +768,7 @@ rm(events_children, events_no_children)
 #demo_unique <- read.csv("/Users/nickbeliveau/Desktop/demo_unique.csv")
 ```
 
-```{r}
+```{r subset_MB, include = FALSE}
 #Creating a subset of the diary data to only inlcude the columns which directly deal with the fabric care brands people use within the survey.
 #These brands, and their instances of use will form the data used for the market basket analysis. Helping to reconstruct their grocery store receipts.
 
@@ -815,7 +799,7 @@ MB_data <- subset(diary, select = c('Detergent_Brand',
 'Anti_Static_Brand_Other'))
 ```
 
-```{r}
+```{r mutate-subset, include = FALSE}
 #Here we are replacing the observations "Other Brand (please specify)" with NA, which do not contain any useful information, only telling us to look at the "Other" columns for the respondents text entry answer. 
 #The need to replace these entries comes from the fact that the Market Basket analysis will treat these entries as though they are items to be included in the receipt reconstruction and to be used in formulating association rules, they should not.
 
@@ -823,7 +807,7 @@ MB_data <- subset(diary, select = c('Detergent_Brand',
 MB_data <- mutate_all(MB_data, funs(replace(., .=='Other Brand (please specify)', NA)))
 ```
 
-```{r}
+```{r append-subset, include = FALSE}
 #For a market basket analysis the data must be in a specific format. This format requires there be no column names (which will be accomplished later). However, because of the way the survey was constructed, if we remove the column names we will lose valuable information about how the brand relates to a specific product type. For instance if we remove the column names but leave the observations alone there would be no way to distinguish "Tide" from "Tide" despite one meaning the use of Tide liquid detergent and the other Tide fabric softener.
 
 # As a result we must append each observation within a column with the column name itself. So "Tide" and "Tide" become: "Tide_detergent" and "Tide_fabric_softener" That is what this line of code does. 
@@ -831,7 +815,7 @@ MB_data <- mutate_all(MB_data, funs(replace(., .=='Other Brand (please specify)'
 MB_data[] <- lapply(seq_along(MB_data),\(i) paste(MB_data[[i]], names(MB_data)[i], sep = "_"))
 ```
 
-```{r}
+```{r append-names, include = FALSE}
 #The previous code appends the column name to ALL observations including those that were NA to begin with (making them no longer NA).
 # For Example: "NA" becomes "NA_detergent:
 # This chunk finds observations which begin with "NA" and converts them to an actual NA value so they can be disregarded in the Market Basket Analysis
@@ -891,21 +875,21 @@ MB_data <- MB_data %>%
 ```
 
 
-```{r, echo = FALSE}
+```{r remove-colnames, include = FALSE}
 #This code removes column names
 
 names(MB_data) <- NULL
 ```
 
 #Write new data set as a csv so that it can be read back into R in specialized format as a 'transactions' list
-```{r, echo = FALSE}
+```{r explort-MB-cleaned, include = FALSE}
 #The packages for the MB Analysis require the data to be read-in in a specific format, requiring us to first export the now cleaned and prepped data out of R Studio so it can be loaded in as a "transaction" file.
 
 
 write.csv(MB_data, "MB_data.csv", row.names = FALSE)
 ```
 
-```{r, echo = FALSE}
+```{r import-MB-cleaned, include = FALSE}
 #Reading in the cleaned data as a transaction file
 
 
@@ -913,14 +897,14 @@ transactions1 <- read.transactions("MB_data.csv", format = "basket", sep = ',', 
 ```
 
 ### Top 20 products by absolute numbers
-```{r, echo = FALSE}
+```{r plot-MB-top-20, echo = FALSE}
 #Plotting the top 20 most common brands/product by aboslute numbers.
 
 itemFrequencyPlot(transactions1, topN=20, type="absolute",horiz=TRUE)
 ```
 
 ### Top 20 products by proportions
-```{r, echo = FALSE}
+```{r plot-MB-top-20-prop, echo = FALSE}
 #Plotting the top 20 most common brands/product by proportion numbers.
 
 
@@ -930,7 +914,7 @@ itemFrequencyPlot(transactions1, topN=20, type="relative",horiz=TRUE)
 ```
 
 ### Check to see how many association rules the current settings have generated
-```{r, echo = FALSE}
+```{r establish-MB-rules, echo = FALSE}
 #Creating the association rules based on parameters.
 # to make rules stricter, increase supp and conf measures.
 # for longer association rules increase minlen
@@ -940,14 +924,14 @@ rules
 ```
 
 ### Preview the first 10 association rules generated
-```{r, echo = FALSE}
+```{r inspect-MB-rules, echo = FALSE}
 #view the first 10 rules
 
 inspect(rules[1:10])
 ```
 
 ### Top 10 association rules by Lift 
-```{r, echo = FALSE}
+```{r inpsect-MB-rules-top-5, echo = FALSE}
 #view the top 5 rules by lift
 
 
@@ -955,7 +939,7 @@ inspect( sort(rules,by="lift", decreasing = TRUE)[1:10])
 ```
 
 ### Top 10 association rules by count
-```{r, echo = FALSE}
+```{r MB-top-10-rules, echo = FALSE}
 #view the top 5 rules by count
 
 
@@ -963,7 +947,7 @@ inspect( sort(rules,by="count", decreasing = TRUE)[1:5])
 ```
 
 ### HTML Widget allowing visual exploration of rules & their interconnected-ness
-```{r, echo = FALSE}
+```{r rules-widget, echo = FALSE}
 #Creating an HTML Widget to visually explore the web of association rules and find interesting patterns!
 #The drop down menu can be used to locate specific products and the rules/groupings they belong to.
 #To zoom in, click on the graph and scroll up and down.
@@ -972,7 +956,7 @@ inspect( sort(rules,by="count", decreasing = TRUE)[1:5])
 plot(rules, method="graph", engine = "htmlwidget")
 ```
 
-```{r, include = FALSE}
+```{r remove-MB-objects, include = FALSE}
 rm(rules, MB_Data)#Remove items to prepare for the next section
 
 
@@ -988,7 +972,7 @@ Simple Keyword selection is a crude analysis tool. Counting entries where keywor
 
 A random sample from each category is presented to provide the "flavor" of each complaint. Note the re-execution of the script will result in a new random sample. 
 
-```{r, include = FALSE}
+```{r prep-frustrations, include = FALSE}
 # Prepare dataset for text analysis
 #Subset Frustrations Data
 frustrations <- diary %>% #Subset the frustrations Entry
@@ -1016,12 +1000,12 @@ text <- read.csv("text.csv") #Load in the data
 ```
 
 
-```{r, include = FALSE}
+```{r remove-temp-dfs, include = FALSE}
 rm(tips, frustrations) #Remove redundancies
 ```
 
 
-```{r, include = FALSE}
+```{r get-uniques-, include = FALSE}
 
 
 frustrations <- as.vector(unique(text$Frustrations)) #Get unique entries from frustrations list, 3216 items long
@@ -1038,7 +1022,7 @@ households <- length(unique(text$respondent_id))  #6685 Households reporting
 
 "husband", "son", "wife", "daughter", "mother", "father", "sister", "brother", "spouse", "sibling", "kid", "kids", "shar.", "people"
 
-```{r, echo=FALSE}
+```{r people-frustrations, echo=FALSE}
 #Setup a regular expression to detect sentence that mention family members, sharing, or other people
 family <- c("husband", "son", "wife", "daughter", "mother", "father", "sister", "brother", "spouse", "sibling", "kid", "kids", "shar.", "people")
 family_match <- str_c(family, collapse = "|")
@@ -1048,22 +1032,23 @@ people_frustrations <- str_subset(frustrations, family_match)
 ```
 
 
-## Random Sample - 25 People Frustrations
+## Random Sample - 10 People Frustrations
 
 
-```{r, include = FALSE}
-sample(people_frustrations, 25)
+```{r sample-people-frustrations, echo = FALSE}
+sample(people_frustrations, 10)
 ```
 
 
 
 ## Frustrations Related to Specific Tasks 
 
-1394 Comments related to task/chores, too many to print below. 745 (53%) include complaints including the word "time". 
+1394 Comments related to task/chores, too many to print below. 745 (53%) include complaints including the word "time", which may mean that half the pain of laundry is the time it takse from the respondents day. 
+
 Keywords or this selection are: 
 "pockets", "residue", "time",  "long", "bend.", "shrink", "wrinkle", "lint", "chore", "sort", "hang", "rewash", "broken", "static"
 
-```{r, include  = FALSE}
+```{r task-frustrations, include  = FALSE}
 #Setup a regular expression to detect sentence that mention details specific to the tasks of doing laundry
 tasks <- c("pockets", "residue", "time",  "long", "bend.", "shrink", "wrinkle", "lint", "chore", "sort", "hang", "rewash", "broken", "static")
 tasks_match <- str_c(tasks, collapse = "|")
@@ -1078,8 +1063,8 @@ length(str_subset(frustrations, "time"))
 ```
 ## Random Sample - Task Frustrations 
 
-```{r, include = FALSE}
-sample(task_frustration, 25)
+```{r, task-sample, echo = FALSE}
+sample(task_frustration, 10)
 
 ```
 
@@ -1088,25 +1073,25 @@ sample(task_frustration, 25)
 308 Frustrations Linked to Soils Keywords
 "dirty", "smell", "dingy", "oil", "grease", "dirt", "blood", "grass"
 
-```{r, include = FALSE}
+```{r soil-frustrations, include = FALSE}
 #Setup a regular expression to detect sentence that mention details specific to the laudnry soils
 soils <- c("dirty", "smell", "dingy", "oil", "grease", "dirt", "blood", "grass")
 soils_match <- str_c(soils, collapse = "|")
 
 soils_frustration <- str_subset(frustrations, soils_match) 
 
-soils_frustration 
+#soils_frustration 
 ```
 ## Random Sample - Soils Frustrations
 
-```{r}
-sample(soils_frustration, 25)
+```{r sample-soils, echo = FALSE}
+sample(soils_frustration, 10)
 ```
 
 ## Economic Frustration
 
 
-```{r}
+```{r economics, include = FALSE}
 #Economic considerations
 
 cost <- c("cost", "price", "expensive", "money", "coin.", "quarter.", "inflation", "bills", "dollar") 
@@ -1122,7 +1107,7 @@ length(cost_frustration)
 
 ## Random Sample - Economic Frustrations
 
-```{r}
+```{r sample-economics, echo = FALSE}
 sample(cost_frustration, 25)
 ```
 
@@ -1133,7 +1118,7 @@ sample(cost_frustration, 25)
 Numerous negatives captured here. See the sampling below. 
 
 
-```{r, include = FALSE}
+```{r enthusiasm, include = FALSE}
 #Who likes doing laundry?
 likes <- c("like", "love", "enjoy", "^fun$", "relax") #the string "like" is too ambiguous to use siomple here
 likes_match <- str_c(likes, collapse = "|")
@@ -1145,10 +1130,80 @@ length(likes_frustration)
 ```
 ## Random Sample - Laundry Enthusiasm
 
-```{r, include = FALSE}
+```{r sample-enthusiasm, echo = FALSE}
 sample(likes_frustration, 25)
+```
+# Tips+Tricks Review
+
+3336 Entries were present in the tips and tricks data.
+
+```{r tips-tricks-size}
+length(tips)
+```
+## No Tips
+
+
+```{r no-tips, include = FALSE}
+#How many nos?
+nos <- c("no", "none", "not", "no.", "NA") #
+nos_match <- str_c(nos, collapse = "|")
+
+no_tips <- str_subset(tips, nos_match) 
+
 ```
 
 
+## Additive Tips and Tricks 
+
+216 Entries Mention an additive from the list, 108 of those mention vinegar. 68 mention "soda", and 40 mention "oxi" whether mentioned in Oxi-Clean or hydrogen peroxide. 
+
+```{r tips-additives, include = FALSE}
+
+chems <- c("vinegar", "lemon", "alcohol", "soda", "oxi", "acid", "citric", "ammonia", "bleach", "hydrogen") #
+chems_match <- str_c(chems, collapse = "|")
+
+chem_tips <- str_subset(tips, chems_match)
+
+length(chem_tips)
+
+length(str_subset(tips, "vinegar"))
+length(str_subset(tips, "soda"))
+length(str_subset(tips, "oxi"))
+
+
+```
+
+## Sample - Additives
+```{r sample-additives, echo = FALSE}
+
+sample(chem_tips, 10) 
+
+```
+
+
+## Folding and Handling Tips
+
+397 Tips including keywords like "fold", "stack",  "hang", "basket", "carry", "store". 
+128 of those tips remind us to prevent wrinkles by hanging or folding. 
+```{r hanlde-tips, include = FALSE}
+
+handle <- c("fold", "stack",  "hang", "basket", "carry", "store") #
+handle_match <- str_c(handle, collapse = "|")
+
+handle_tips <- str_subset(tips, handle_match)
+
+length(handle_tips)
+
+length(str_subset(handle_tips, "wrinkle"))
+
+```
+
+## Handling Sample
+
+```{r sample-handling, echo=FALSE}
+
+sample(handle_tips, 10)
+
+```
 
 
