@@ -395,6 +395,7 @@ Notable youth skew in Avoiders and Strivers; laundry optimization may be a skill
 ```{r plot-segment-2, echo = FALSE}
 demo %>% #Possible distnction by age
   ggplot(aes(y = segment, x = respondent_age)) + geom_boxplot(fill = "#1e9fc7") + 
+  geom_vline(aes(xintercept = 52), color = "lightblue") +
   labs( x= "Respondent Age", y = "", title = "Segment Age Distribution", subtitle = "Avoiders and Strivers skewed youngest") +
     theme_minimal()
 ```
@@ -595,6 +596,34 @@ demo %>%
     theme_minimal()
 
 ```
+
+
+## Age Distribution of Survey Respondents 
+
+Having Establihsed the respondent age as a proxy for the HOH, or as an age representative of the driver of the laundry activity, we review the age distribtuion of the demographics. 
+Mean and median age are both 42. The Interquartile range o the sample, or the middle 50 percent, is 40 to 65 years old. This is not representative of the United States, which reports a median age of 39. (census.gov)
+
+Please Note the spike of respondents at aage 89, this is a data cleaning artifact, as "80+" was re coded as 89 years old. The sample likely tapers off like the younger end of the distribution. 
+
+```{r demo-age-stats, include = FALSE}
+mean(demo$respondent_age)
+median(demo$respondent_age)
+min(demo$respondent_age)
+summary(demo$respondent_age)
+
+```
+
+
+```{r plot-age-distro, echo = FALSE}
+demo %>%
+  ggplot(aes(x = respondent_age)) +
+  geom_histogram(binwidth = 1, fill = "#1e9fc7") +
+  scale_x_continuous(breaks = seq(15, 90, by = 5)) +
+  geom_vline(xintercept =  c(40, 52, 65), color = "lightblue") +
+  labs(title = "Multimodal Age Distibution", subtitle = "Mean and Median - 52 | IQR 40-65", x = "Respondent Age", y = "")
+```
+
+
 
 ```{r, echo = FALSE}
 #Evaluate Under 40's
